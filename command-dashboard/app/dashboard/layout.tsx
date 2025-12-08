@@ -10,145 +10,133 @@ import {
   LogOut, 
   Activity,
   Shield,
-  Radar
+  Radar,
+  FileText,
+  History,
+  HardDrive
 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30 flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex overflow-hidden">
       
-      {/* Background Effects */}
-      <div className="fixed inset-0 bg-grid-kai opacity-30 pointer-events-none" />
-      <div className="fixed inset-0 bg-gradient-radial from-blue-950/20 via-transparent to-transparent pointer-events-none" />
-
-      {/* SIDEBAR - Train Cockpit Style */}
-      <aside className="w-20 lg:w-64 border-r-2 border-blue-900/50 bg-slate-950/95 backdrop-blur-xl flex flex-col justify-between fixed h-full z-30 shadow-[0_0_30px_rgba(37,99,235,0.1)]">
+      {/* SIDEBAR - KAI Corporate Style */}
+      <aside className="w-64 bg-[#2D3588] text-white flex flex-col justify-between fixed h-full z-30 shadow-lg">
         
         {/* Logo Header */}
-        <div>
-          <div className="h-20 flex items-center px-4 lg:px-5 border-b-2 border-blue-900/50 bg-gradient-to-r from-blue-950/50 to-transparent">
-            <div className="p-2.5 bg-blue-950/50 rounded-lg border border-blue-600/30 mr-3 shadow-[0_0_15px_rgba(37,99,235,0.2)]">
-              <Train className="text-blue-400 w-5 h-5" />
-            </div>
-            <div className="hidden lg:block">
-              <span className="font-display font-bold tracking-wider text-lg text-white">
-                AEON<span className="text-blue-400">RAIL</span>
-              </span>
-              <div className="text-[9px] font-mono text-blue-500/60 tracking-widest">COMMAND CENTER</div>
-            </div>
-          </div>
-          
-          {/* Navigation */}
-          <div className="px-3 py-6">
-            <div className="text-[10px] font-mono text-blue-500/50 uppercase tracking-[0.2em] mb-4 px-2 hidden lg:block">
-              SYSTEM MODULES
-            </div>
-            <nav className="space-y-1">
-              <NavItem 
-                href="/dashboard" 
-                icon={<Radar size={18} />} 
-                label="Live Monitor" 
-                active={pathname === "/dashboard"} 
-              />
-              <NavItem 
-                href="/dashboard/config" 
-                icon={<Settings size={18} />} 
-                label="Sensor Config" 
-                active={pathname === "/dashboard/config"} 
-              />
-              <NavItem 
-                href="#" 
-                icon={<Activity size={18} />} 
-                label="Analytics" 
-              />
-              <NavItem 
-                href="#" 
-                icon={<Shield size={18} />} 
-                label="Security" 
-              />
-            </nav>
+        <div className="h-20 flex items-center px-6 border-b border-white/10 bg-black/10">
+          <div className="flex items-center gap-3">
+             <div className="bg-white p-1.5 rounded-lg">
+                <img 
+                  src="/images/logo%20Aeon.png" 
+                  alt="Aeon Logo" 
+                  className="h-6 w-auto"
+                />
+             </div>
+             <div>
+               <div className="font-bold tracking-wide text-lg">AEON RAIL</div>
+               <div className="text-[10px] text-blue-200 font-mono tracking-widest uppercase">Command Center</div>
+             </div>
           </div>
         </div>
+          
+        {/* Navigation */}
+        <div className="flex-1 px-4 py-8 space-y-1 overflow-y-auto">
+            <div className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-4 px-3">
+              Monitoring
+            </div>
+            <NavItem 
+              href="/dashboard" 
+              icon={<Radar size={18} />} 
+              label="Live Monitor" 
+              active={pathname === "/dashboard"} 
+            />
+            <NavItem 
+              href="/dashboard/history" 
+              icon={<History size={18} />} 
+              label="Riwayat Insiden" 
+              active={pathname === "/dashboard/history"}
+            />
+            
+            <div className="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-4 px-3 mt-8">
+              Management
+            </div>
+            <NavItem 
+              href="/dashboard/devices" 
+              icon={<HardDrive size={18} />} 
+              label="Manajemen Perangkat" 
+              active={pathname === "/dashboard/devices"}
+            />
+            <NavItem 
+              href="/dashboard/reports" 
+              icon={<FileText size={18} />} 
+              label="Laporan" 
+              active={pathname === "/dashboard/reports"}
+            />
+        </div>
 
-        {/* Footer */}
-        <div className="p-3 border-t-2 border-blue-900/50 bg-gradient-to-t from-blue-950/30 to-transparent">
+        {/* User Profile (Bottom) */}
+        <div className="p-4 border-t border-white/10 bg-black/20">
+          <div className="flex items-center gap-3 mb-4">
+             <div className="h-10 w-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-bold">
+               SM
+             </div>
+             <div>
+               <div className="font-bold text-sm">Budi Santoso</div>
+               <div className="text-xs text-blue-200">Station Master - Jombang</div>
+             </div>
+          </div>
           <Link href="/">
-            <button className="w-full flex items-center gap-3 p-3 rounded-lg text-red-400 hover:bg-red-950/30 hover:text-red-300 transition-all border border-transparent hover:border-red-500/30 group">
-              <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="hidden lg:block text-sm font-medium tracking-wide">Disconnect</span>
+            <button className="w-full flex items-center justify-center gap-2 p-2 rounded bg-red-500/10 hover:bg-red-500/20 text-red-200 hover:text-white transition-all text-xs font-bold border border-red-500/20">
+              <LogOut size={14} />
+              KELUAR SISTEM
             </button>
           </Link>
-          
-          {/* System Status */}
-          <div className="mt-3 flex items-center gap-3 bg-slate-900/50 p-3 rounded-lg border border-blue-600/20">
-            <div className="relative">
-              <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]" />
-              <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping opacity-50" />
-            </div>
-            <div className="hidden lg:block">
-              <div className="text-[10px] font-bold text-emerald-400 font-mono tracking-wider">SYSTEM ONLINE</div>
-              <div className="text-[9px] text-slate-600 font-mono">v2.0.4 // KAI-NEXUS</div>
-            </div>
-          </div>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 ml-20 lg:ml-64 relative flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 ml-64 relative flex flex-col h-screen overflow-hidden bg-slate-50">
         
-        {/* Top Bar - Cockpit Header */}
-        <header className="h-14 border-b-2 border-blue-900/50 flex items-center justify-between px-6 bg-slate-950/90 backdrop-blur-md sticky top-0 z-20 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-          
-          {/* Left: Breadcrumb */}
-          <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center text-xs font-mono tracking-widest text-slate-500">
-              <span className="text-blue-500">KAI NEXUS</span>
-              <span className="mx-2 text-slate-700">//</span>
-              <span className="text-orange-400 uppercase font-bold">
-                {pathname === "/dashboard" ? "LIVE MONITOR" : pathname.split("/").pop()?.toUpperCase()}
-              </span>
-            </div>
-          </div>
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-20 shadow-sm">
+           
+           {/* Breadcrumbs */}
+           <div className="flex items-center text-sm font-medium text-slate-500">
+             <span className="hover:text-[#2D3588] cursor-pointer">Dashboard</span>
+             <span className="mx-2">/</span>
+             <span className="hover:text-[#2D3588] cursor-pointer">Live Monitoring</span>
+             <span className="mx-2">/</span>
+             <span className="text-[#2D3588] font-bold bg-blue-50 px-2 py-0.5 rounded">JPL 102 Jombang</span>
+           </div>
 
-          {/* Center: Live Indicator */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 bg-slate-900/80 px-4 py-1.5 rounded-full border border-blue-600/30">
-            <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-[10px] font-mono font-bold text-red-400 tracking-widest">LIVE</span>
-          </div>
+           {/* System Status */}
+           <div className="flex items-center gap-6 text-xs font-medium text-slate-600">
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                 <span>Sunny 32°C</span>
+              </div>
+              <div className="h-4 w-px bg-slate-300"></div>
+              <div className="flex items-center gap-2">
+                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                 <span>Latency: 42ms</span>
+              </div>
+              <div className="h-4 w-px bg-slate-300"></div>
+              <div className="flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-200">
+                 <Activity size={12} />
+                 <span className="font-bold">SYSTEM STABLE</span>
+              </div>
+           </div>
 
-          {/* Right: Operator Info */}
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-[9px] font-mono text-blue-500/60 uppercase tracking-widest">OPERATOR</span>
-              <span className="text-sm font-bold text-white tracking-wide font-mono">STATION MASTER</span>
-            </div>
-            <div className="h-9 w-9 bg-gradient-to-br from-blue-700 to-blue-900 rounded-lg border border-blue-500/30 flex items-center justify-center text-xs font-bold text-blue-200 shadow-[0_0_15px_rgba(37,99,235,0.2)]">
-              SM
-            </div>
-          </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-hidden relative">
-          <div className="relative h-full z-10">
+        {/* Scrollable Content Area */}
+        <main className="flex-1 overflow-y-auto p-6">
             {children}
-          </div>
         </main>
 
-        {/* Bottom Status Bar */}
-        <footer className="h-8 border-t border-blue-900/30 bg-slate-950/90 flex items-center justify-between px-6 text-[10px] font-mono text-slate-600">
-          <div className="flex items-center gap-6">
-            <span>BACKEND: <span className="text-emerald-500">CONNECTED</span></span>
-            <span>LATENCY: <span className="text-blue-400">12ms</span></span>
-            <span>AI ENGINE: <span className="text-emerald-500">ACTIVE</span></span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Radio size={10} className="text-blue-500" />
-            <span>AEON RAILGUARD // PT KAI SMART CITY NEXUS</span>
-          </div>
-        </footer>
       </div>
     </div>
   );
@@ -157,14 +145,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function NavItem({ href, icon, label, active = false }: { href: string, icon: React.ReactNode, label: string, active?: boolean }) {
   return (
     <Link href={href}>
-      <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden ${
+      <button className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 font-medium text-sm ${
         active 
-        ? 'bg-blue-950/50 text-blue-400 border border-blue-600/30 shadow-[0_0_20px_rgba(37,99,235,0.15)]' 
-        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border border-transparent hover:border-blue-600/20'
+        ? 'bg-white text-[#2D3588] font-bold shadow-sm' 
+        : 'text-blue-100 hover:bg-white/10 hover:text-white'
       }`}>
-        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_10px_#3b82f6]" />}
-        <span className={active ? "text-blue-400" : "group-hover:text-blue-400 transition-colors"}>{icon}</span>
-        <span className="hidden lg:block text-sm font-medium tracking-wide">{label}</span>
+        <span className={active ? "text-[#2D3588]" : "opacity-70"}>{icon}</span>
+        <span>{label}</span>
       </button>
     </Link>
   );

@@ -1,90 +1,233 @@
-# 🚅 AEON RAILGUARD: City Nexus Edition
-> **Smart City Emergency Response Platform** for the Ekraf Tech Summit 2025.
+# 🚆 Aeon RailGuard: Integrated Smart City Railway Safety System
 
-![Aeon RailGuard Hero](aeon_railguard_hero.png)
+<p align="center">
+  <img src="https://img.shields.io/badge/🏆_Ekraf_Tech_Summit-2025-gold?style=for-the-badge" alt="Ekraf Tech Summit 2025"/>
+  <img src="https://img.shields.io/badge/🇮🇩_Made_in-Jombang-red?style=for-the-badge" alt="Made in Jombang"/>
+  <img src="https://img.shields.io/badge/🤖_AI-Powered-blue?style=for-the-badge" alt="AI Powered"/>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yhyaa294/Aeon-Railguard)
-[![Tech Stack](https://img.shields.io/badge/Stack-Python%20%7C%20Go%20%7C%20Next.js-blueviolet)](https://github.com/yhyaa294/Aeon-Railguard)
-
----
-
-## 🌐 The Concept: From Hardware to CityOS
-**Aeon RailGuard** represents a paradigm shift from traditional hardware safety barriers to a **software-first Smart City Nervous System**. 
-
-Instead of just closing a gate, we:
-1.  **WATCH**: AI Computer Vision detects obstacles 500m away.
-2.  **THINK**: Central Neural Core calculates impact trajectory.
-3.  **ACT**: Instantly overrides city traffic lights and dispatches EMS before the crash happening.
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat-square&logo=go" alt="Go"/>
+  <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python" alt="Python"/>
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/YOLOv8-Ultralytics-FF6F00?style=flat-square" alt="YOLOv8"/>
+</p>
 
 ---
 
-## 🏗️ Architecture: The Trinity
+## 📋 Overview
 
-The system operates on a high-speed microservices architecture:
+**Aeon RailGuard** is a software-first solution designed to **legalize and secure illegal railway crossings (JPL Liar)** using AI and Smart City integration.
 
-### 👁️ **THE EYE** (Perception Layer)
-*   **Tech**: Python, YOLOv8, OpenCV.
-*   **Role**: Constant surveillance of the "Kill Zone". Detects people, cars, and debris with 99% accuracy.
-*   **Output**: Real-time JSON telemetry to The Brain.
+> *"Solving the dilemma between Economic Access vs. Public Safety."*
 
-### 🧠 **THE BRAIN** (Decision Core)
-*   **Tech**: Go (Golang), Fiber, WebSockets.
-*   **Role**: The tactical commander. Processes thousands of data points per second.
-*   **Action**: Triggers the "Red Protocol" — changing traffic signals and alerting authorities.
-
-### 💻 **THE FACE** (Command Dashboard)
-*   **Tech**: Next.js 14, TailwindCSS, Framer Motion.
-*   **Style**: **Industrial Sci-Fi**. Inspired by mission control centers.
-*   **Features**: Real-time video feed, live map, and distance-to-impact countdown.
+Di Indonesia, terdapat ribuan perlintasan kereta api ilegal yang dibangun masyarakat untuk akses ekonomi. Menutupnya berarti memutus mata pencaharian. Membiarkannya berarti mempertaruhkan nyawa. **Aeon RailGuard hadir sebagai solusi tengah** — melegalkan akses tersebut dengan pengawasan AI dan integrasi Smart City.
 
 ---
 
-## 📸 Snapshots
+## ✨ Key Features
 
-| Traffic Normal | Impact Imminent |
-|:---:|:---:|
-| ![Status Safe](https://via.placeholder.com/400x200/000000/00ff00?text=STATUS:+SAFE) | ![Status Critical](https://via.placeholder.com/400x200/000000/ff0000?text=CRITICAL+ALERT) |
-
-> *The UI pulses RED when a threat is detected, simulating a high-stakes emergency environment.*
+| Module | Feature | Description |
+|--------|---------|-------------|
+| 👁️ | **The Eye** | Real-time Object Detection using YOLOv8 with **50ms latency** |
+| 🧠 | **The Brain** | Central Simulation Core calculating **Time-to-Collision (TTC)** |
+| 🏙️ | **City Grid** | Auto-dispatch Ambulance & Traffic Light Override integration |
+| 👮 | **Multi-Tier Access** | Role-based dashboards for JPL Officers, Station Masters, and DAOP Command |
+| 📡 | **Live WebSocket** | Real-time status broadcasting to all connected clients |
+| 🗺️ | **Geospatial Map** | Interactive map showing all camera unit positions |
 
 ---
 
-## 🚀 Quick Start
+## 🏗️ System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DAOP 7 MADIUN (Command Level)               │
+│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
+│  │   Stasiun Jombang       │  │   Stasiun Mojoagung         │   │
+│  │  ┌─────┐┌─────┐┌─────┐  │  │  ┌─────┐┌─────┐             │   │
+│  │  │JPL  ││JPL  ││JPL  │  │  │  │JPL  ││JPL  │             │   │
+│  │  │102  ││105  ││110  │  │  │  │201  ││205  │             │   │
+│  │  └──┬──┘└──┬──┘└──┬──┘  │  │  └──┬──┘└──┬──┘             │   │
+│  │     │      │      │     │  │     │      │                │   │
+│  │  [CAM]  [CAM]  [CAM]    │  │  [CAM]  [CAM]               │   │
+│  └─────────────────────────┘  └─────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────┐
+              │   🧠 CENTRAL BRAIN (Go/Fiber) │
+              │   WebSocket + REST API        │
+              │   Port: 8080                  │
+              └───────────────────────────────┘
+                     │              │
+          ┌──────────┘              └──────────┐
+          ▼                                    ▼
+┌─────────────────────┐              ┌─────────────────────┐
+│  👁️ AI ENGINE       │              │  💻 DASHBOARD       │
+│  Python + YOLOv8    │              │  Next.js 14         │
+│  Object Detection   │              │  KAI Enterprise UI  │
+└─────────────────────┘              └─────────────────────┘
+```
+
+---
+
+## 🔐 Multi-Tier Access Control
+
+Sistem menggunakan **Role-Based Access Control (RBAC)** dengan 3 level:
+
+| Level | Role | Akses | Endpoint |
+|-------|------|-------|----------|
+| 1 | **JPL Operator** | Hanya 2-4 kamera di pos mereka | `/api/hierarchy?role=jpl` |
+| 2 | **Station Master** | Semua JPL di bawah stasiun | `/api/hierarchy?role=station` |
+| 3 | **DAOP Command** | Seluruh region + Global Map | `/api/hierarchy?role=daop` |
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend: Central Brain
+- **Language**: Go (Golang) 1.20+
+- **Framework**: Fiber v2
+- **Real-time**: WebSocket (gorilla/websocket)
+- **Features**: CORS, Logger Middleware
+
+### AI Engine: The Eye
+- **Language**: Python 3.9+
+- **Model**: Ultralytics YOLOv8
+- **Computer Vision**: OpenCV
+- **Detection**: Person, Car, Motorcycle, Truck
+
+### Frontend: Command Dashboard
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS
+- **Theme**: KAI Enterprise Light Theme
+- **Maps**: Leaflet.js
+- **Icons**: Lucide React
+
+---
+
+## 🚀 How to Run (Instructions for Judges)
 
 ### Prerequisites
-*   Python 3.9+
-*   Go 1.20+
-*   Node.js 18+
+```bash
+# Required installations
+- Go 1.20+
+- Python 3.9+ with pip
+- Node.js 18+ with npm
+```
 
-### 1. Initialize The Brain 🧠
+### Step 1: Start The Brain 🧠
 ```bash
 cd central-brain
 go run main.go
-# Listening on :8080
+
+# Output:
+# ╔══════════════════════════════════════════════════════════╗
+# ║     AEON RAILGUARD - CENTRAL BRAIN v2.0                  ║
+# ║     Multi-Tier Access Control System                     ║
+# ╚══════════════════════════════════════════════════════════╝
+# Server running on http://localhost:8080
 ```
 
-### 2. Launch The Face 💻
+### Step 2: Launch The Eye 👁️
+```bash
+cd ai-engine
+pip install -r requirements.txt
+python app.py
+
+# AI Detection active on port 5000
+```
+
+### Step 3: Open The Dashboard 💻
 ```bash
 cd command-dashboard
+npm install
 npm run dev
+
 # Dashboard live at http://localhost:3000
 ```
 
-### 3. Wake The Eye 👁️
+### Step 4: Test the API
 ```bash
-cd ai-engine
-python detector.py
-# Surveillance Active
+# JPL Operator View (Limited)
+curl http://localhost:8080/api/hierarchy?role=jpl
+
+# Station Master View
+curl http://localhost:8080/api/hierarchy?role=station
+
+# DAOP Command View (Full Access)
+curl http://localhost:8080/api/hierarchy?role=daop
 ```
 
 ---
 
-## 🏆 Project Team
-Built with precision for **Ekraf Tech Summit 2025**.
+## 📁 Project Structure
 
-*   **Lead Architect**: Yahya
-*   **Category**: Emergency Response / Smart City
+```
+Aeon-Railguard/
+├── central-brain/          # Go Backend (The Brain)
+│   ├── main.go             # Main server with WebSocket & REST API
+│   └── go.mod              # Go dependencies
+│
+├── ai-engine/              # Python AI (The Eye)
+│   ├── app.py              # YOLOv8 detection server
+│   └── requirements.txt    # Python dependencies
+│
+├── command-dashboard/      # Next.js Frontend (The Face)
+│   ├── app/
+│   │   ├── page.tsx        # Landing page (7 sections)
+│   │   ├── login/          # Secure login page
+│   │   └── dashboard/      # Enterprise dashboard
+│   ├── components/         # Reusable components
+│   └── public/images/      # Static assets
+│
+└── README.md               # You are here!
+```
 
 ---
-*Powered by ⚡ Antigravity & AI*
+
+## 🎯 Demo Scenarios
+
+### Scenario 1: Normal Monitoring
+- Semua kamera ONLINE (hijau)
+- Train distance > 3km = STATUS SAFE
+- City Action: MONITORING
+
+### Scenario 2: Warning State
+- Train approaching < 3km
+- Dashboard turns YELLOW
+- City Action: TRAFFIC CAUTION ACTIVATED
+
+### Scenario 3: Critical Emergency
+- Object detected in ROI + Train < 1km
+- Dashboard turns RED with alarm
+- City Action: DISPATCHING POLICE & AMBULANCE
+- Traffic lights override to RED
+
+---
+
+## 🏆 Team
+
+<p align="center">
+  <strong>Developed with Pride by</strong><br/>
+  <h2 align="center">🚀 Team GenZ AI Jombang 🚀</h2>
+</p>
+
+<p align="center">
+  <em>Dikembangkan dengan Bangga di Jombang, Indonesia</em><br/>
+  <strong>Ekraf Tech Summit 2025</strong>
+</p>
+
+---
+
+## 📜 License
+
+This project is built for **Ekraf Tech Summit 2025** competition.
+
+---
+
+<p align="center">
+  <strong>🇮🇩 100% Karya Anak Bangsa 🇮🇩</strong><br/>
+  <em>Solving Real Problems with Real Technology</em>
+</p>

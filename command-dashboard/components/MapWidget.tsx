@@ -64,7 +64,7 @@ export default function MapWidget({ trainDistance = 0, status }: MapWidgetProps)
   if (!isMounted) {
     return (
       <div className="h-full w-full flex items-center justify-center bg-slate-900 text-slate-500 animate-pulse">
-        Loading Map Module...
+        Memuat Modul Peta...
       </div>
     );
   }
@@ -84,8 +84,8 @@ export default function MapWidget({ trainDistance = 0, status }: MapWidgetProps)
         <Marker position={position}>
           <Popup>
             <div className="text-slate-900">
-              <strong>Train Detected</strong><br />
-              Distance: {trainDistance}m<br />
+              <strong>Kereta Terdeteksi</strong><br />
+              Jarak: {trainDistance}m<br />
               Status: {status}
             </div>
           </Popup>
@@ -95,7 +95,7 @@ export default function MapWidget({ trainDistance = 0, status }: MapWidgetProps)
       {/* HUD Overlay */}
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
         <div className="bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 shadow-lg text-white min-w-[140px]">
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">System Status</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Status Sistem</div>
           <div className="flex items-center gap-2 font-bold font-mono">
             {status === 'CRITICAL' && <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />}
             {status === 'SAFE' && <Shield className="w-4 h-4 text-emerald-500" />}
@@ -109,7 +109,7 @@ export default function MapWidget({ trainDistance = 0, status }: MapWidgetProps)
         </div>
 
         <div className="bg-slate-900/90 backdrop-blur-md p-3 rounded-lg border border-slate-600 shadow-lg text-white">
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Distance</div>
+          <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">Jarak</div>
           <div className="font-mono text-xl">{trainDistance}m</div>
         </div>
       </div>
