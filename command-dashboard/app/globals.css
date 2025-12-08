@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-50 antialiased font-sans overflow-x-hidden;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 rounded-full hover:bg-blue-600/50 transition-colors;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-lg;
+  }
+  
+  .glass-panel-kai {
+    @apply bg-slate-900/80 backdrop-blur-xl border border-blue-600/30 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.1)];
+  }
+  
+  .cockpit-border {
+    @apply border-2 border-blue-600/40 rounded-lg relative;
+    box-shadow: 
+      inset 0 0 20px rgba(37, 99, 235, 0.05),
+      0 0 20px rgba(37, 99, 235, 0.1);
+  }
+  
+  .cockpit-border::before {
+    content: '';
+    @apply absolute -top-px -left-px -right-px -bottom-px rounded-lg pointer-events-none;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.3) 0%, transparent 50%, rgba(249, 115, 22, 0.2) 100%);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    padding: 1px;
+  }
+  
+  .kai-header {
+    @apply text-blue-400 font-mono text-xs uppercase tracking-[0.2em] font-bold;
+    text-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+  }
+  
+  .kai-value {
+    @apply font-mono text-orange-500 font-black;
+    text-shadow: 0 0 20px rgba(249, 115, 22, 0.6);
+  }
+  
+  .alert-critical {
+    @apply bg-red-950/50 border-2 border-red-500 text-red-400;
+    animation: criticalPulse 0.5s ease-in-out infinite;
+  }
+  
+  .alert-warning {
+    @apply bg-orange-950/50 border-2 border-orange-500 text-orange-400;
+  }
+  
+  .status-indicator {
+    @apply relative inline-flex;
+  }
+  
+  .status-indicator::after {
+    content: '';
+    @apply absolute inset-0 rounded-full animate-ping;
+  }
+  
+  .status-indicator.online::after {
+    @apply bg-emerald-500/50;
+  }
+  
+  .status-indicator.warning::after {
+    @apply bg-orange-500/50;
+  }
+  
+  .status-indicator.critical::after {
+    @apply bg-red-500/50;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  }
+  
+  .text-glow-orange {
+    text-shadow: 0 0 20px rgba(249, 115, 22, 0.6), 0 0 40px rgba(249, 115, 22, 0.3);
+  }
+  
+  .text-glow-blue {
+    text-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+  }
+  
+  .box-glow-blue {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.2), inset 0 0 20px rgba(37, 99, 235, 0.05);
+  }
+  
+  .box-glow-orange {
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.3);
+  }
+  
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  
+  .bg-grid-kai {
+    background-image: linear-gradient(to right, rgba(37, 99, 235, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  
+  .scanline {
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
+    background-size: 100% 4px;
+    pointer-events: none;
+  }
+  
+  .font-display {
+    font-family: 'Orbitron', sans-serif;
+  }
+}
+
+@keyframes criticalPulse {
+  0%, 100% { 
+    opacity: 1; 
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+  }
+  50% { 
+    opacity: 0.8; 
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
+  }
+}

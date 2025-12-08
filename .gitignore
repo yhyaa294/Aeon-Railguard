@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+/ai-engine/__pycache__/
+/ai-engine/venv/
+
+# Build outputs
+/central-brain/railguard-brain.exe
+/central-brain/*.exe
+/command-dashboard/.next/
+/command-dashboard/out/
+
+# Environment variables
+.env
+.DS_Store
