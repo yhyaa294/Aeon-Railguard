@@ -4,12 +4,12 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import LiveMap from "@/components/LiveMap";
 import TelemetryPanel from "@/components/TelemetryPanel";
 import VideoFeed from "@/components/VideoFeed";
-import { WifiOff, RefreshCw } from "lucide-react";
+import { WifiOff, RefreshCw, Wifi } from "lucide-react";
 
 export default function DashboardPage() {
   const { state, isConnected, reconnect } = useWebSocket();
 
-  const isDanger = state.status === "CRITICAL";
+  const isCritical = state.status === "CRITICAL";
   const isWarning = state.status === "WARNING";
 
   return (
@@ -40,7 +40,7 @@ export default function DashboardPage() {
         
         {/* Left Column: Video Feed */}
         <div className="lg:col-span-1 flex flex-col gap-4">
-          <VideoFeed isDanger={isDanger} />
+          <VideoFeed isDanger={isCritical} />
         </div>
 
         {/* Center Column: Live Map (Hero) */}
@@ -48,26 +48,26 @@ export default function DashboardPage() {
           <LiveMap 
             trainDistance={state.distance}
             trainSpeed={state.speed}
-            isDanger={isDanger}
+            isDanger={isCritical}
             className="flex-1 min-h-[300px]"
           />
           
           {/* Quick Stats Bar */}
           <div className="grid grid-cols-3 gap-3">
             <QuickStat 
-              label="SYSTEM" 
+              label="STATUS" 
               value={state.status} 
-              color={isDanger ? "red" : isWarning ? "orange" : "emerald"}
+              color={isCritical ? "red" : isWarning ? "orange" : "emerald"}
             />
             <QuickStat 
-              label="TRAIN ID" 
-              value="KA-2045" 
+              label="TRAIN" 
+              value={state.train_id} 
               color="blue"
             />
             <QuickStat 
-              label="CITY" 
-              value={state.city_response.replace("_", " ")} 
-              color={isDanger ? "red" : "blue"}
+              label="TIME" 
+              value={state.timestamp} 
+              color="blue"
             />
           </div>
         </div>
@@ -77,10 +77,10 @@ export default function DashboardPage() {
           <TelemetryPanel 
             trainSpeed={state.speed}
             distanceToCrossing={state.distance}
-            eta={state.eta}
+            eta={(state.distance / state.speed) * 3600}
             status={state.status}
-            isDanger={isDanger}
-            cityResponse={state.city_response}
+            isDanger={isCritical}
+            cityResponse={state.city_action}
           />
         </div>
       </div>

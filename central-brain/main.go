@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -13,161 +12,225 @@ import (
 	"github.com/gofiber/websocket/v2"
 )
 
-// BroadcastState is the simplified JSON sent to frontend
-type BroadcastState struct {
-	Distance     float64 `json:"distance"`
-	Status       string  `json:"status"`
-	CityResponse string  `json:"city_response"`
-	Speed        float64 `json:"speed"`
-	ETA          float64 `json:"eta"`
+// SystemState represents the real-time train and city status
+type SystemState struct {
+	TrainID    string  `json:"train_id"`
+	Speed      float64 `json:"speed"`
+	Distance   float64 `json:"distance"`
+	Status     string  `json:"status"`
+	CityAction string  `json:"city_action"`
+	Timestamp  string  `json:"timestamp"`
 }
 
-// Incident represents an AI-detected hazard
-type Incident struct {
-	ID          string    `json:"id"`
-	Type        string    `json:"type"`
-	Confidence  float64   `json:"confidence"`
-	Timestamp   time.Time `json:"timestamp"`
-	ObjectClass string    `json:"object_class"`
-	InROI       bool      `json:"in_roi"`
+// IncidentPayload represents incoming AI detection alerts
+type IncidentPayload struct {
+	Type        string  `json:"type"`
+	ObjectClass string  `json:"object_class"`
+	Confidence  float64 `json:"confidence"`
+	InROI       bool    `json:"in_roi"`
 }
 
 var (
-	distance        float64 = 10.0
-	status          string  = "SAFE"
-	cityResponse    string  = "TRAFFIC_NORMAL"
-	speed           float64 = 80.0
-	activeIncident  bool    = false
-	
-	stateMutex      sync.RWMutex
-	wsClients       = make(map[*websocket.Conn]bool)
-	wsClientsMux    sync.Mutex
-	incidentChan    = make(chan Incident, 10)
+	// Current system state
+	state = SystemState{
+		TrainID:    "KA-2045",
+		Speed:      120.0,
+		Distance:   10.0,
+		Status:     "SAFE",
+		CityAction: "MONITORING",
+		Timestamp:  time.Now().Format("15:04:05"),
+	}
+
+	// Mutex for thread-safe state access
+	stateMutex sync.RWMutex
+
+	// WebSocket clients
+	wsClients    = make(map[*websocket.Conn]bool)
+	wsClientsMux sync.Mutex
+
+	// Incident flag
+	incidentActive = false
 )
 
 func main() {
+	// Initialize Fiber
 	app := fiber.New(fiber.Config{
-		AppName: "Aeon RailGuard Central Brain v2.0",
+		AppName: "Aeon RailGuard - Central Brain v2.0",
 	})
 
+	// Middleware
 	app.Use(logger.New(logger.Config{
-		Format: "[BRAIN] ${time} | ${status} | ${method} ${path}\n",
+		Format:     "[${time}] ${status} - ${method} ${path} (${latency})\n",
+		TimeFormat: "15:04:05",
 	}))
+
+	// CORS - Allow all origins for demo
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowMethods: "GET, POST, OPTIONS",
 	}))
 
 	// Routes
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"service": "Aeon RailGuard - Central Brain",
-			"version": "2.0.0",
-			"status":  "ONLINE",
-		})
-	})
-
-	app.Get("/api/state", getSystemState)
+	app.Get("/", handleRoot)
+	app.Get("/api/status", handleGetStatus)
 	app.Post("/api/incident", handleIncident)
-	app.Post("/api/train/reset", resetTrain)
+	app.Post("/api/reset", handleReset)
 
-	// WebSocket
+	// WebSocket upgrade middleware
 	app.Use("/ws", func(c *fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
 			return c.Next()
 		}
 		return fiber.ErrUpgradeRequired
 	})
+
+	// WebSocket endpoint
 	app.Get("/ws", websocket.New(handleWebSocket))
 
-	// Start goroutines
-	go simulationLoop()
-	go incidentProcessor()
+	// Start simulation engine
+	go simulationEngine()
 
-	log.Println("============================================")
-	log.Println("  AEON RAILGUARD - CENTRAL BRAIN v2.0")
-	log.Println("  Smart City Emergency Response Platform")
-	log.Println("============================================")
-	log.Println("[BRAIN] Starting on http://localhost:8080")
-	log.Println("[BRAIN] WebSocket: ws://localhost:8080/ws")
-	log.Println("[BRAIN] Simulation: 0.1 km/sec decrement")
-	log.Println("============================================")
-	
+	// Start WebSocket broadcaster
+	go wsBroadcaster()
+
+	// Print startup banner
+	printBanner()
+
+	// Start server
 	log.Fatal(app.Listen(":8080"))
 }
 
-func getSystemState(c *fiber.Ctx) error {
-	stateMutex.RLock()
-	defer stateMutex.RUnlock()
-	
-	return c.JSON(BroadcastState{
-		Distance:     distance,
-		Status:       status,
-		CityResponse: cityResponse,
-		Speed:        speed,
-		ETA:          calculateETA(),
+func printBanner() {
+	log.Println("╔══════════════════════════════════════════════════════════╗")
+	log.Println("║     AEON RAILGUARD - CENTRAL BRAIN v2.0                  ║")
+	log.Println("║     Smart City Emergency Response Platform               ║")
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Println("║  HTTP Server  : http://localhost:8080                    ║")
+	log.Println("║  WebSocket    : ws://localhost:8080/ws                   ║")
+	log.Println("║  API Status   : GET  /api/status                         ║")
+	log.Println("║  AI Incident  : POST /api/incident                       ║")
+	log.Println("║  Reset Sim    : POST /api/reset                          ║")
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Println("║  Simulation   : Distance decreases 0.2 km/sec            ║")
+	log.Println("║  Status Logic : >3km=SAFE, <3km=WARNING, <1km=CRITICAL   ║")
+	log.Println("╚══════════════════════════════════════════════════════════╝")
+}
+
+// handleRoot returns service info
+func handleRoot(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"service": "Aeon RailGuard - Central Brain",
+		"version": "2.0.0",
+		"status":  "ONLINE",
+		"endpoints": fiber.Map{
+			"status":   "GET /api/status",
+			"incident": "POST /api/incident",
+			"reset":    "POST /api/reset",
+			"websocket": "WS /ws",
+		},
 	})
 }
 
+// handleGetStatus returns current system state
+func handleGetStatus(c *fiber.Ctx) error {
+	stateMutex.RLock()
+	defer stateMutex.RUnlock()
+	return c.JSON(state)
+}
+
+// handleIncident processes AI detection alerts
 func handleIncident(c *fiber.Ctx) error {
-	var incident Incident
-	if err := c.BodyParser(&incident); err != nil {
+	var payload IncidentPayload
+	if err := c.BodyParser(&payload); err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid payload"})
 	}
 
-	incident.Timestamp = time.Now()
-	if incident.ID == "" {
-		incident.ID = fmt.Sprintf("INC-%d", time.Now().UnixNano())
-	}
+	log.Println("╔══════════════════════════════════════════════════════════╗")
+	log.Println("║  🚨 INCIDENT ALERT RECEIVED FROM AI ENGINE               ║")
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Printf("║  Type       : %s\n", payload.Type)
+	log.Printf("║  Object     : %s\n", payload.ObjectClass)
+	log.Printf("║  Confidence : %.1f%%\n", payload.Confidence*100)
+	log.Printf("║  In ROI     : %v\n", payload.InROI)
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Println("║  ACTION: TRIGGERING EMERGENCY PROTOCOL                   ║")
+	log.Println("║  → Dispatching Police Unit                               ║")
+	log.Println("║  → Dispatching Ambulance                                 ║")
+	log.Println("║  → Setting Traffic Lights to RED                         ║")
+	log.Println("║  → Sending STOP signal to Train                          ║")
+	log.Println("╚══════════════════════════════════════════════════════════╝")
 
-	log.Println("============================================")
-	log.Printf("[ALERT] INCIDENT RECEIVED FROM AI ENGINE")
-	log.Printf("[ALERT] Type: %s | Object: %s", incident.Type, incident.ObjectClass)
-	log.Printf("[ALERT] Confidence: %.1f%% | In ROI: %v", incident.Confidence*100, incident.InROI)
-	log.Println("============================================")
+	// Activate incident mode
+	stateMutex.Lock()
+	incidentActive = true
+	state.Status = "CRITICAL"
+	state.CityAction = "DISPATCHING POLICE & AMBULANCE"
+	stateMutex.Unlock()
 
-	incidentChan <- incident
+	// Auto-clear incident after 8 seconds (for demo loop)
+	go func() {
+		time.Sleep(8 * time.Second)
+		stateMutex.Lock()
+		incidentActive = false
+		state.Distance = 10.0
+		state.Speed = 120.0
+		log.Println("[SYSTEM] Incident cleared - Simulation reset")
+		stateMutex.Unlock()
+	}()
 
 	return c.Status(201).JSON(fiber.Map{
-		"status":      "ALERT_PROCESSED",
-		"incident_id": incident.ID,
-		"action":      "EMERGENCY_PROTOCOL_INITIATED",
+		"status":  "ALERT_RECEIVED",
+		"action":  "EMERGENCY_PROTOCOL_ACTIVATED",
+		"message": "Police and Ambulance dispatched",
 	})
 }
 
-func resetTrain(c *fiber.Ctx) error {
+// handleReset resets the simulation
+func handleReset(c *fiber.Ctx) error {
 	stateMutex.Lock()
-	distance = 10.0
-	status = "SAFE"
-	cityResponse = "TRAFFIC_NORMAL"
-	speed = 80.0
-	activeIncident = false
+	state.Distance = 10.0
+	state.Speed = 120.0
+	state.Status = "SAFE"
+	state.CityAction = "MONITORING"
+	incidentActive = false
 	stateMutex.Unlock()
 
-	log.Println("[BRAIN] Simulation reset to initial state")
-	broadcastState()
+	log.Println("[SYSTEM] Simulation manually reset to initial state")
 
-	return c.JSON(fiber.Map{"status": "RESET_COMPLETE", "distance": 10.0})
+	return c.JSON(fiber.Map{
+		"status":   "RESET_COMPLETE",
+		"distance": 10.0,
+	})
 }
 
+// handleWebSocket manages WebSocket connections
 func handleWebSocket(c *websocket.Conn) {
+	// Register client
 	wsClientsMux.Lock()
 	wsClients[c] = true
+	clientCount := len(wsClients)
 	wsClientsMux.Unlock()
 
-	log.Println("[WS] Frontend client connected")
+	log.Printf("[WS] Client connected (Total: %d)\n", clientCount)
 
 	// Send initial state
-	broadcastToClient(c)
+	stateMutex.RLock()
+	initialData, _ := json.Marshal(state)
+	stateMutex.RUnlock()
+	c.WriteMessage(websocket.TextMessage, initialData)
 
+	// Cleanup on disconnect
 	defer func() {
 		wsClientsMux.Lock()
 		delete(wsClients, c)
+		remaining := len(wsClients)
 		wsClientsMux.Unlock()
 		c.Close()
-		log.Println("[WS] Frontend client disconnected")
+		log.Printf("[WS] Client disconnected (Remaining: %d)\n", remaining)
 	}()
 
+	// Keep connection alive (read messages but ignore them)
 	for {
 		_, _, err := c.ReadMessage()
 		if err != nil {
@@ -176,148 +239,86 @@ func handleWebSocket(c *websocket.Conn) {
 	}
 }
 
-func broadcastToClient(c *websocket.Conn) {
-	stateMutex.RLock()
-	state := BroadcastState{
-		Distance:     distance,
-		Status:       status,
-		CityResponse: cityResponse,
-		Speed:        speed,
-		ETA:          calculateETA(),
-	}
-	stateMutex.RUnlock()
-
-	data, _ := json.Marshal(state)
-	c.WriteMessage(websocket.TextMessage, data)
-}
-
-func broadcastState() {
-	stateMutex.RLock()
-	state := BroadcastState{
-		Distance:     distance,
-		Status:       status,
-		CityResponse: cityResponse,
-		Speed:        speed,
-		ETA:          calculateETA(),
-	}
-	stateMutex.RUnlock()
-
-	data, _ := json.Marshal(state)
-
-	wsClientsMux.Lock()
-	defer wsClientsMux.Unlock()
-
-	for client := range wsClients {
-		if err := client.WriteMessage(websocket.TextMessage, data); err != nil {
-			client.Close()
-			delete(wsClients, client)
-		}
-	}
-}
-
-func calculateETA() float64 {
-	if speed <= 0 || distance <= 0 {
-		return 0
-	}
-	return (distance / speed) * 3600 // seconds
-}
-
-func simulationLoop() {
+// simulationEngine runs the train distance simulation
+func simulationEngine() {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
-	log.Println("[SIM] Simulation loop started - Train approaching crossing")
+	log.Println("[SIM] Simulation engine started")
 
 	for range ticker.C {
 		stateMutex.Lock()
 
-		// Decrease distance by 0.1 km every second
-		if distance > 0 && !activeIncident {
-			distance -= 0.1
-			if distance < 0 {
-				distance = 0
+		// Update timestamp
+		state.Timestamp = time.Now().Format("15:04:05")
+
+		// Skip distance update if incident is active (train is braking)
+		if incidentActive {
+			// Simulate emergency braking
+			if state.Speed > 0 {
+				state.Speed -= 20.0
+				if state.Speed < 0 {
+					state.Speed = 0
+				}
 			}
+			stateMutex.Unlock()
+			continue
 		}
 
-		// Emergency brake if incident active
-		if activeIncident && speed > 0 {
-			speed -= 15.0
-			if speed < 0 {
-				speed = 0
-			}
+		// Decrease distance by 0.2 km per second
+		state.Distance -= 0.2
+		if state.Distance < 0 {
+			state.Distance = 0
 		}
 
-		// Status logic based on distance and incident
-		previousStatus := status
-		
+		// Status logic based on distance
 		switch {
-		case activeIncident || distance < 1.0:
-			status = "CRITICAL"
-			cityResponse = "EMERGENCY_DISPATCH"
-		case distance < 3.0:
-			status = "WARNING"
-			cityResponse = "TRAFFIC_CAUTION"
+		case state.Distance < 1.0:
+			state.Status = "CRITICAL"
+			state.CityAction = "DISPATCHING POLICE & AMBULANCE"
+		case state.Distance < 3.0:
+			state.Status = "WARNING"
+			state.CityAction = "TRAFFIC CAUTION ACTIVATED"
 		default:
-			status = "SAFE"
-			cityResponse = "TRAFFIC_NORMAL"
+			state.Status = "SAFE"
+			state.CityAction = "MONITORING"
 		}
 
-		// Log status changes
-		if status != previousStatus {
-			log.Printf("[SIM] Status changed: %s -> %s (Distance: %.1f km)", previousStatus, status, distance)
-			
-			if status == "CRITICAL" {
-				log.Println("============================================")
-				log.Println("[CITY] DISPATCHING AMBULANCE & POLICE")
-				log.Println("[CITY] Traffic lights: FORCE RED")
-				log.Println("[CITY] Rail signal: EMERGENCY STOP")
-				log.Println("============================================")
-			}
-		}
-
-		// Reset simulation when train passes crossing
-		if distance <= 0 && !activeIncident {
+		// Reset simulation when train "passes" the crossing
+		if state.Distance <= 0 {
 			log.Println("[SIM] Train passed crossing - Resetting simulation")
-			distance = 10.0
-			speed = 80.0
-			status = "SAFE"
-			cityResponse = "TRAFFIC_NORMAL"
+			state.Distance = 10.0
+			state.Speed = 120.0
+			state.Status = "SAFE"
+			state.CityAction = "MONITORING"
 		}
 
 		stateMutex.Unlock()
-		broadcastState()
 	}
 }
 
-func incidentProcessor() {
-	for incident := range incidentChan {
-		stateMutex.Lock()
-		
-		activeIncident = true
-		status = "CRITICAL"
-		cityResponse = "EMERGENCY_DISPATCH"
+// wsBroadcaster sends state updates to all connected WebSocket clients
+func wsBroadcaster() {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-		log.Println("============================================")
-		log.Println("[EMERGENCY] PROTOCOL ACTIVATED")
-		log.Println("[CITY] DISPATCHING AMBULANCE & POLICE")
-		log.Printf("[CITY] Incident: %s detected at crossing", incident.ObjectClass)
-		log.Println("[CITY] Traffic Override: ALL RED")
-		log.Println("[CITY] Train Signal: EMERGENCY BRAKE")
-		log.Println("============================================")
+	for range ticker.C {
+		stateMutex.RLock()
+		data, err := json.Marshal(state)
+		stateMutex.RUnlock()
 
-		stateMutex.Unlock()
-		broadcastState()
+		if err != nil {
+			continue
+		}
 
-		// Auto-clear incident after 10 seconds (for demo purposes)
-		go func() {
-			time.Sleep(10 * time.Second)
-			stateMutex.Lock()
-			activeIncident = false
-			distance = 10.0
-			speed = 80.0
-			log.Println("[SIM] Incident cleared - Simulation reset")
-			stateMutex.Unlock()
-			broadcastState()
-		}()
+		wsClientsMux.Lock()
+		for client := range wsClients {
+			if err := client.WriteMessage(websocket.TextMessage, data); err != nil {
+				// Client disconnected, will be cleaned up in handleWebSocket
+				client.Close()
+				delete(wsClients, client)
+			}
+		}
+		wsClientsMux.Unlock()
 	}
 }

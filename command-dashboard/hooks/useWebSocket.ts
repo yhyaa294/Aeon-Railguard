@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 export interface SystemState {
+  train_id: string;
+  speed: number;
   distance: number;
   status: string;
-  city_response: string;
-  speed: number;
-  eta: number;
+  city_action: string;
+  timestamp: string;
 }
 
 interface UseWebSocketReturn {
@@ -18,11 +19,12 @@ interface UseWebSocketReturn {
 }
 
 const DEFAULT_STATE: SystemState = {
+  train_id: "KA-2045",
+  speed: 120,
   distance: 10.0,
   status: "SAFE",
-  city_response: "TRAFFIC_NORMAL",
-  speed: 80,
-  eta: 450,
+  city_action: "MONITORING",
+  timestamp: "00:00:00",
 };
 
 export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSocketReturn {
@@ -51,35 +53,30 @@ export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSock
           const data: SystemState = JSON.parse(event.data);
           setState(data);
         } catch (e) {
-          console.error("[WS] Failed to parse message:", e);
+          console.error("[WS] Parse error:", e);
         }
       };
 
       ws.onclose = () => {
-        console.log("[WS] Disconnected from Central Brain");
+        console.log("[WS] Disconnected");
         setIsConnected(false);
         wsRef.current = null;
 
+        // Auto-reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log("[WS] Attempting reconnection...");
           connect();
         }, 3000);
       };
 
       ws.onerror = () => {
-        console.error("[WS] Connection error");
         setError("Connection failed");
         setIsConnected(false);
       };
 
       wsRef.current = ws;
     } catch (e) {
-      console.error("[WS] Failed to create connection:", e);
       setError("Failed to connect");
-      
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connect();
-      }, 3000);
+      reconnectTimeoutRef.current = setTimeout(connect, 3000);
     }
   }, [url]);
 
