@@ -1,29 +1,14 @@
 # ============================================
 # AEON RAILGUARD - GITIGNORE
-# Code only - Large files on Google Drive
+# Private Repo - Push everything except videos
 # ============================================
 
-# --- LARGE FILES (USE GOOGLE DRIVE) ---
+# --- VIDEO FILES ONLY ---
 *.mp4
 *.avi
 *.mov
 *.mkv
-*.jpg
-*.jpeg
-*.png
-*.webp
-*.zip
-*.tar.gz
-*.rar
-*.pt
-*.onnx
-.gitattributes
-
-# --- AI ENGINE DATA ---
-ai-engine/datasets/
-ai-engine/inference/output/
-ai-engine/evidence/
-ai-engine/models/*.pt
+*.webm
 
 # --- DEPENDENCIES ---
 node_modules/
