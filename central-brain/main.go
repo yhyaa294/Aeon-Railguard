@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -453,6 +454,139 @@ func handleReset(c *fiber.Ctx) error {
 
 	log.Println("[SYSTEM] Full reset - Train & City status restored")
 	return c.JSON(fiber.Map{"status": "RESET_COMPLETE"})
+}
+
+// --- DEMO GOD MODE HANDLERS ---
+
+func handleDemoTrigger(c *fiber.Ctx) error {
+	demoModeMutex.Lock()
+	if demoModeActive {
+		demoModeMutex.Unlock()
+		return c.Status(409).JSON(fiber.Map{
+			"status":  "ALREADY_ACTIVE",
+			"message": "Demo mode is already running",
+		})
+	}
+	demoModeActive = true
+	demoModeMutex.Unlock()
+
+	log.Println("╔══════════════════════════════════════════════════════════╗")
+	log.Println("║  🚨 DEMO GOD MODE ACTIVATED - 30 SECOND CRITICAL ALERT   ║")
+	log.Println("╚══════════════════════════════════════════════════════════╝")
+
+	// Force CRITICAL state
+	stateMutex.Lock()
+	incidentActive = true
+	state.Status = "CRITICAL"
+	state.Speed = 0
+	state.Distance = 0.1
+	state.CityAction = "EMERGENCY RESPONSE ACTIVATED"
+	stateMutex.Unlock()
+
+	// Force City to CRITICAL
+	cityStatusMutex.Lock()
+	cityStatus.TrafficLight = "GREEN_WAVE"
+	cityStatus.Ambulance = "DISPATCHED"
+	cityStatus.Police = "DISPATCHED"
+	cityStatus.EvacuationRoute = "CLOSED"
+	cityStatus.Siren = "CRITICAL"
+	cityStatus.RailCrossing = "CLOSED"
+	cityStatus.LastUpdate = time.Now().Format("15:04:05")
+	cityStatusMutex.Unlock()
+
+	// Add fake incident to history
+	incidentHistoryMutex.Lock()
+	newIncident := IncidentLog{
+		ID:        fmt.Sprintf("INC-%d", time.Now().Unix()),
+		Type:      "OBSTACLE_DETECTED",
+		Location:  "JPL 102 (Jombang Kota)",
+		Message:   "CRITICAL: Obstacle Detected at JPL 102 (Manual Verification)",
+		Severity:  "CRITICAL",
+		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
+	}
+	incidentHistory = append([]IncidentLog{newIncident}, incidentHistory...)
+	// Keep only last 50 incidents
+	if len(incidentHistory) > 50 {
+		incidentHistory = incidentHistory[:50]
+	}
+	incidentHistoryMutex.Unlock()
+
+	// Broadcast immediately via WebSocket
+	broadcastDemoAlert()
+
+	// Auto-reset after 30 seconds
+	go func() {
+		time.Sleep(30 * time.Second)
+		
+		demoModeMutex.Lock()
+		demoModeActive = false
+		demoModeMutex.Unlock()
+
+		stateMutex.Lock()
+		incidentActive = false
+		state.Status = "SAFE"
+		state.Speed = 120.0
+		state.Distance = 10.0
+		state.CityAction = "MONITORING"
+		stateMutex.Unlock()
+
+		cityStatusMutex.Lock()
+		cityStatus.TrafficLight = "NORMAL"
+		cityStatus.Ambulance = "STANDBY"
+		cityStatus.Police = "STANDBY"
+		cityStatus.EvacuationRoute = "OPEN"
+		cityStatus.Siren = "OFF"
+		cityStatus.RailCrossing = "OPEN"
+		cityStatus.LastUpdate = time.Now().Format("15:04:05")
+		cityStatusMutex.Unlock()
+
+		log.Println("[DEMO] God Mode deactivated - System restored to normal")
+	}()
+
+	return c.Status(200).JSON(fiber.Map{
+		"status":   "DEMO_TRIGGERED",
+		"message":  "Critical alert activated for 30 seconds",
+		"duration": 30,
+		"incident": newIncident,
+	})
+}
+
+func handleDemoStatus(c *fiber.Ctx) error {
+	demoModeMutex.RLock()
+	active := demoModeActive
+	demoModeMutex.RUnlock()
+
+	return c.JSON(fiber.Map{
+		"demo_active": active,
+		"timestamp":   time.Now().Format("15:04:05"),
+	})
+}
+
+func handleGetIncidentHistory(c *fiber.Ctx) error {
+	incidentHistoryMutex.RLock()
+	defer incidentHistoryMutex.RUnlock()
+
+	return c.JSON(fiber.Map{
+		"incidents": incidentHistory,
+		"count":     len(incidentHistory),
+	})
+}
+
+func broadcastDemoAlert() {
+	alertData, _ := json.Marshal(fiber.Map{
+		"type": "demo_alert",
+		"data": fiber.Map{
+			"active":    true,
+			"message":   "DEMO GOD MODE - CRITICAL ALERT",
+			"timestamp": time.Now().Format("15:04:05"),
+		},
+	})
+
+	wsClientsMux.Lock()
+	for client := range wsClients {
+		client.WriteMessage(websocket.TextMessage, alertData)
+	}
+	wsClientsMux.Unlock()
 }
 
 func handleWebSocket(c *websocket.Conn) {

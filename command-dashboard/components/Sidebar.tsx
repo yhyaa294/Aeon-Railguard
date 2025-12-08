@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, RefreshCw, Shield, AlertTriangle } from 'lucide-react';
+import { ChevronDown, RefreshCw, Shield, AlertTriangle, Zap } from 'lucide-react';
 import { useDashboard, UserRole } from '@/contexts/DashboardContext';
 import SidebarTree, {
   SidebarTreeRoot,
   convertStationToTree,
   convertPostToTree,
 } from './SidebarTree';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 // --- ROLE ICONS ---
 const ROLE_ICONS = {
@@ -32,9 +34,39 @@ export default function Sidebar() {
     isLoading,
     isEmergency,
     refreshData,
+    triggerEmergency,
   } = useDashboard();
 
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [demoModeActive, setDemoModeActive] = useState(false);
+  const [demoTriggering, setDemoTriggering] = useState(false);
+
+  // Hidden Demo God Mode trigger
+  const handleDemoTrigger = useCallback(async () => {
+    if (demoTriggering || demoModeActive) return;
+    
+    setDemoTriggering(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/demo/trigger`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      
+      if (response.ok) {
+        setDemoModeActive(true);
+        triggerEmergency();
+        
+        // Auto-reset UI state after 30 seconds
+        setTimeout(() => {
+          setDemoModeActive(false);
+        }, 30000);
+      }
+    } catch (error) {
+      console.error('[DEMO] Trigger failed:', error);
+    } finally {
+      setDemoTriggering(false);
+    }
+  }, [demoTriggering, demoModeActive, triggerEmergency]);
 
   // --- RENDER: JPL ROLE (Single Post View) ---
   const renderJplView = () => {
@@ -137,7 +169,25 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="h-full w-72 bg-[#1e2563] text-white flex flex-col shadow-xl">
+    <aside className={`h-full w-72 bg-[#1e2563] text-white flex flex-col shadow-xl transition-all duration-300 ${
+      demoModeActive ? 'ring-4 ring-red-500 animate-pulse' : ''
+    }`}>
+      {/* Demo Mode Active Banner */}
+      <AnimatePresence>
+        {demoModeActive && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-gradient-to-r from-red-600 via-orange-500 to-red-600 px-4 py-2 flex items-center justify-center gap-2"
+          >
+            <Zap size={14} className="animate-bounce" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Demo God Mode Active</span>
+            <Zap size={14} className="animate-bounce" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="p-4 border-b border-white/10 bg-[#2D3588]">
         <div className="flex items-center justify-between">
@@ -248,6 +298,24 @@ export default function Sidebar() {
             )}
           </AnimatePresence>
         </div>
+      </div>
+
+      {/* Hidden Demo God Mode Trigger - Triple click on version text */}
+      <div className="px-4 py-2 border-t border-white/5 bg-[#151a3d]">
+        <button
+          onClick={handleDemoTrigger}
+          disabled={demoTriggering || demoModeActive}
+          className={`w-full text-center text-[10px] transition-all duration-300 ${
+            demoModeActive 
+              ? 'text-red-400 font-bold animate-pulse' 
+              : demoTriggering
+                ? 'text-orange-400'
+                : 'text-slate-600 hover:text-slate-400'
+          }`}
+          title="System Version"
+        >
+          {demoModeActive ? '⚡ DEMO ACTIVE ⚡' : demoTriggering ? 'Triggering...' : 'v1.0.0'}
+        </button>
       </div>
     </aside>
   );
