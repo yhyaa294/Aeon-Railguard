@@ -332,41 +332,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* LIVE TICKER BAR */}
-      <div className="fixed bottom-0 w-full bg-black/90 backdrop-blur-md border-t border-slate-800 z-50 py-2 overflow-hidden">
-        <div className="flex items-center gap-4 animate-marquee whitespace-nowrap">
-          <div className="flex items-center gap-2 text-[#00FF00] font-mono text-xs md:text-sm font-bold tracking-wider px-4">
-            <span className="w-2 h-2 bg-[#00FF00] rounded-full animate-pulse"></span>
-            SYSTEM STATUS: ONLINE
-          </div>
-          <span className="text-slate-600">//</span>
-          <div className="text-[#00FF00] font-mono text-xs md:text-sm font-bold tracking-wider">
-            SERVER JOMBANG: CONNECTED
-          </div>
-          <span className="text-slate-600">//</span>
-          <div className="text-[#00FF00] font-mono text-xs md:text-sm font-bold tracking-wider">
-            LATENCY: 42ms
-          </div>
-          <span className="text-slate-600">//</span>
-          <div className="text-[#00FF00] font-mono text-xs md:text-sm font-bold tracking-wider">
-            JPL 102: SAFE
-          </div>
-          <span className="text-slate-600">//</span>
-          <div className="text-[#00FF00] font-mono text-xs md:text-sm font-bold tracking-wider">
-            AI CONFIDENCE: 99.8%
-          </div>
-        </div>
-      </div>
 
-      <style jsx global>{`
-        @keyframes marquee {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          animation: marquee 20s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }
