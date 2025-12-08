@@ -4,361 +4,267 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { 
+  ArrowRight, 
+  MapPin, 
   TrafficCone, 
   BellRing, 
   Zap, 
-  BarChart3, 
-  ArrowRight, 
-  Camera, 
-  Cpu, 
-  Volume2, 
-  Activity,
-  CheckCircle2,
-  Mail,
-  MapPin,
-  Phone
+  BarChart3,
+  ShieldCheck,
+  Smartphone,
+  Server
 } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-[#F6841F]/30 text-slate-900 overflow-x-hidden">
+    <div className="min-h-screen bg-white font-sans selection:bg-[#F6841F]/30 overflow-x-hidden">
       
       <Navbar />
 
-      {/* --- HERO SECTION: MODERN & SLEEK --- */}
-      <section id="hero" className="relative h-screen min-h-[700px] flex items-center">
+      {/* =========================================
+          SECTION 1: HERO (PHOTO-REALISTIC + 3D) 
+         ========================================= */}
+      <section className="relative h-screen w-full overflow-hidden">
         
-        {/* Background */}
+        {/* Layer 0: Background Station (Real Photo) */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/images/stasiun.png"
-            alt="Smart Station"
+            alt="Background Stasiun"
             fill
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-slate-900/90" />
-          {/* Subtle Grid Pattern Overlay */}
-          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10 mix-blend-overlay" />
+          {/* Heavy Dark Gradient for Text Readability */}
+          <div className="absolute inset-0 bg-slate-900/80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-transparent to-slate-900/90" />
         </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center w-full">
-          
-          {/* Left: Typography */}
-          <div className="space-y-8 animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-xs font-mono tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
-              AEON INTELLIGENCE V2.0
-            </div>
+        {/* Layer 1: Content (Centered & Top-Heavy) */}
+        <div className="relative z-20 h-full flex flex-col items-center justify-start pt-32 md:pt-44 px-4 text-center">
+          <div className="flex flex-col items-center max-w-5xl mx-auto animate-fade-in-up">
             
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight tracking-tight">
-              Menyelamatkan Nyawa dengan <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-[#F6841F]">
-                Kecerdasan Buatan.
-              </span>
+            {/* Title */}
+            <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-white tracking-tighter leading-none mb-8 drop-shadow-2xl">
+              AEON RAILGUARD
             </h1>
-            
-            <p className="text-lg text-slate-300 max-w-xl leading-relaxed font-light">
-              Sistem palang pintu digital terintegrasi Smart City yang mengubah perlintasan ilegal menjadi zona aman tanpa infrastruktur fisik yang mahal.
+
+            {/* Subtitle Box (The specific requirement) */}
+            <div className="relative mb-10 group cursor-default inline-block">
+              <div className="absolute -inset-1 bg-[#F6841F]/40 blur-sm rounded-lg"></div>
+              <h2 className="relative px-6 py-3 bg-[#A04000] bg-opacity-80 backdrop-blur-md border border-[#F6841F] text-white text-lg md:text-2xl font-mono font-bold tracking-widest uppercase rounded shadow-2xl">
+                SOLUSI CERDAS PERLINTASAN & JALUR TIKUS
+              </h2>
+            </div>
+
+            {/* Quote */}
+            <p className="text-slate-200 text-xl md:text-3xl font-light italic tracking-wide mb-12 drop-shadow-md max-w-4xl leading-relaxed">
+              &quot;Menjaga Nyawa Tanpa Menutup Akses Ekonomi Warga.&quot;
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link 
-                href="/dashboard" 
-                className="px-8 py-4 bg-[#F6841F] hover:bg-[#d66e12] text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-orange-500/20 text-center"
-              >
-                Lihat Demo Live
-              </Link>
-              <Link 
-                href="#technology" 
-                className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 font-medium rounded-lg backdrop-blur-sm transition-all text-center"
-              >
-                Pelajari Cara Kerja
-              </Link>
-            </div>
-            
-            <div className="pt-8 flex items-center gap-6 text-sm text-slate-400 font-medium">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> KAI Standard
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> 99.9% Uptime
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> ISO 27001
-              </div>
-            </div>
-          </div>
+            {/* CTA Button */}
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-3 px-10 py-4 bg-[#F6841F] hover:bg-[#e07010] text-white text-lg font-bold rounded-full shadow-2xl shadow-orange-500/40 transition-all hover:scale-105 hover:ring-4 ring-orange-500/30"
+            >
+              Coba Sekarang <ArrowRight className="w-5 h-5" />
+            </Link>
 
-          {/* Right: Visual (Abstract/Sensor Representation) */}
-          <div className="hidden md:block relative h-[500px] w-full">
-            {/* Abstract Tech Representation using CSS & composition */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-orange-500/20 rounded-full blur-3xl opacity-30 animate-pulse-fast"></div>
-            
-            {/* Central "Sensor" Graphic (Simulated with composition if no asset) */}
-             <div className="relative w-full h-full flex items-center justify-center">
-                <div className="relative w-80 h-80">
-                  <div className="absolute inset-0 border border-blue-500/30 rounded-full animate-spin-slow"></div>
-                  <div className="absolute inset-4 border border-orange-500/20 rounded-full animate-reverse-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                     <div className="w-48 h-48 bg-slate-800/80 backdrop-blur-md rounded-2xl border border-slate-700 shadow-2xl flex flex-col items-center justify-center gap-4 relative overflow-hidden group hover:scale-105 transition-transform duration-500">
-                        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                        <Activity className="w-16 h-16 text-[#F6841F]" />
-                        <div className="text-center">
-                          <div className="text-xs text-slate-400 uppercase tracking-widest mb-1">Status</div>
-                          <div className="text-white font-bold text-xl">ACTIVE</div>
-                        </div>
-                     </div>
-                  </div>
-                  
-                  {/* Floating Elements */}
-                  <div className="absolute top-0 right-10 bg-white/10 backdrop-blur-md p-4 rounded-lg border border-white/10 animate-float-delay-1">
-                    <div className="text-xs text-blue-300 mb-1">Detection Rate</div>
-                    <div className="text-xl font-mono font-bold text-white">99.8%</div>
-                  </div>
-                  
-                  <div className="absolute bottom-10 left-0 bg-white/10 backdrop-blur-md p-4 rounded-lg border border-white/10 animate-float-delay-2">
-                    <div className="text-xs text-orange-300 mb-1">Latency</div>
-                    <div className="text-xl font-mono font-bold text-white">45ms</div>
-                  </div>
-                </div>
-             </div>
           </div>
+        </div>
 
+        {/* Layer 2: Foreground Train (3D Depth Effect) */}
+        <div className="absolute bottom-0 left-0 w-full z-10 pointer-events-none">
+          <div className="relative w-full h-[50vh] md:h-[65vh] lg:h-[75vh]">
+            <Image
+              src="/images/kereta transparan ke kanan.png"
+              alt="Train Foreground"
+              fill
+              className="object-contain object-bottom"
+              priority
+            />
+          </div>
         </div>
       </section>
 
-      {/* --- SECTION: THE AEON ECOSYSTEM (BENTO GRID) --- */}
-      <section id="ecosystem" className="py-32 bg-white">
+      {/* =========================================
+          SECTION 2: REALITA DI LAPANGAN (SPLIT)
+         ========================================= */}
+      <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-16 md:text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-6 tracking-tight">
-              Ekosistem Keselamatan Terpadu
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            
+            {/* Left: Real Photo (No Cartoons) */}
+            <div className="w-full lg:w-1/2">
+              <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white rotate-1 hover:rotate-0 transition-transform duration-500 group">
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10" />
+                <Image
+                  src="/images/perlintasan ilegal.png"
+                  alt="Realita Perlintasan Ilegal"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-cover transform scale-105 group-hover:scale-110 transition-transform duration-700"
+                />
+                
+                {/* Location Badge */}
+                <div className="absolute bottom-6 left-6 z-20 bg-black/60 backdrop-blur-md px-4 py-2 rounded-lg border-l-4 border-red-500 text-white">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-1 text-red-400">
+                    <MapPin size={12} /> Zona Bahaya
+                  </div>
+                  <div className="text-sm font-semibold">Perlintasan Tanpa Palang</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Text Content */}
+            <div className="w-full lg:w-1/2 space-y-8">
+              <div>
+                <span className="text-[#F6841F] font-black tracking-widest text-sm uppercase mb-2 block">LATAR BELAKANG</span>
+                <h2 className="text-4xl md:text-5xl font-black text-[#2D3588] leading-tight mb-6">
+                  Realita di Jalur Tikus
+                </h2>
+                <div className="w-20 h-2 bg-[#F6841F] rounded-full"></div>
+              </div>
+              
+              <p className="text-xl text-slate-600 leading-relaxed font-light">
+                Ratusan perlintasan sebidang ilegal menjadi urat nadi ekonomi warga. Sekolah, pasar, dan lahan pertanian bergantung pada akses ini. 
+                <strong className="text-slate-900 font-semibold block mt-4">
+                Menutupnya berarti mematikan ekonomi, membiarkannya berarti mempertaruhkan nyawa.
+                </strong>
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg text-red-600"><TrafficCone size={20} /></div>
+                  <span className="font-bold text-slate-700">Rawan Kecelakaan</span>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                  <div className="p-2 bg-orange-100 rounded-lg text-orange-600"><TrafficCone size={20} /></div>
+                  <span className="font-bold text-slate-700">Minim Pengawasan</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================
+          SECTION 3: AEON ECOSYSTEM (CLEAN ICONS)
+         ========================================= */}
+      <section className="py-24 bg-white relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <span className="text-blue-600 font-bold tracking-widest text-sm uppercase mb-2 block">EKOSISTEM TEKNOLOGI</span>
+            <h2 className="text-4xl md:text-5xl font-black text-[#2D3588] mb-6">
+              Fitur Keselamatan Terpadu
             </h2>
             <p className="text-lg text-slate-500">
-              Lebih dari sekadar kamera. Aeon menghubungkan infrastruktur fisik dengan kecerdasan digital untuk menciptakan lapisan perlindungan berlapis.
+              Menggabungkan infrastruktur fisik dengan kecerdasan digital untuk perlindungan maksimal.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[minmax(250px,auto)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
-            {/* Card 1: Large Feature */}
-            <div className="md:col-span-2 bg-slate-50 rounded-3xl p-8 border border-slate-100 hover:border-blue-100 transition-all hover:shadow-xl group relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <TrafficCone size={200} />
-               </div>
-               <div className="relative z-10 h-full flex flex-col justify-between">
-                 <div>
-                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 text-blue-600">
-                     <TrafficCone size={24} />
-                   </div>
-                   <h3 className="text-2xl font-bold text-slate-900 mb-3">Smart City Integration</h3>
-                   <p className="text-slate-600 max-w-md">
-                     Terhubung langsung dengan API Dinas Perhubungan untuk mengontrol lampu lalu lintas di persimpangan terdekat. Jalur evakuasi otomatis hijau saat kereta akan melintas.
-                   </p>
-                 </div>
-                 <div className="mt-8 flex gap-2">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">API Ready</span>
-                    <span className="px-3 py-1 bg-slate-200 text-slate-700 text-xs font-bold rounded-full">Low Latency</span>
-                 </div>
-               </div>
-            </div>
+            {/* Feature 1 */}
+            <FeatureCard 
+              icon={<TrafficCone size={32} />}
+              title="Smart Traffic Integration"
+              desc="Terhubung dengan API Dinas Perhubungan untuk mengontrol lampu lalu lintas. Jalur evakuasi otomatis hijau saat darurat."
+              color="blue"
+            />
 
-            {/* Card 2: Vertical Feature */}
-            <div className="md:row-span-2 bg-slate-900 text-white rounded-3xl p-8 border border-slate-800 flex flex-col relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-900/20 to-transparent"></div>
-                <div className="relative z-10">
-                   <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center mb-6 text-[#F6841F]">
-                     <BellRing size={24} />
-                   </div>
-                   <h3 className="text-2xl font-bold mb-3">Public Early Warning</h3>
-                   <p className="text-slate-400 mb-8 leading-relaxed">
-                     Sistem notifikasi massal yang mengirimkan peringatan ke perangkat mobile warga dalam radius 1KM dari perlintasan, 5 menit sebelum kereta tiba.
-                   </p>
-                   
-                   {/* Mockup Notification */}
-                   <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-xs font-bold">WA</div>
-                        <div className="text-xs">
-                          <div className="font-bold">Aeon Alert System</div>
-                          <div className="text-slate-400">Baru saja</div>
-                        </div>
-                      </div>
-                      <div className="text-sm bg-white/5 p-3 rounded text-slate-200">
-                        ⚠️ <span className="font-bold text-yellow-400">PERINGATAN:</span> Kereta Argo Wilis akan melintas di JPL 204 dalam 3 menit. Harap menjauh dari rel.
-                      </div>
-                   </div>
-                </div>
-            </div>
+            {/* Feature 2 */}
+            <FeatureCard 
+              icon={<BellRing size={32} />}
+              title="WhatsApp Public Alert"
+              desc="Sistem notifikasi massal yang mengirimkan peringatan ke warga radius 1KM, 5 menit sebelum kereta tiba."
+              color="green"
+            />
 
-            {/* Card 3: Standard */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-100 hover:border-orange-100 transition-all hover:shadow-lg">
-                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-6 text-orange-600">
-                   <Zap size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">Independent Power</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">
-                   Dilengkapi panel surya dan baterai cadangan industri. Sistem tetap beroperasi normal 24/7 bahkan saat pemadaman listrik total.
-                </p>
-            </div>
+            {/* Feature 3 */}
+            <FeatureCard 
+              icon={<Zap size={32} />}
+              title="Solar Power Backup"
+              desc="Panel surya dan baterai industri memastikan sistem tetap hidup 24/7 meskipun terjadi pemadaman listrik total."
+              color="orange"
+            />
 
-            {/* Card 4: Standard */}
-            <div className="bg-white rounded-3xl p-8 border border-slate-100 hover:border-blue-100 transition-all hover:shadow-lg">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 text-purple-600">
-                   <BarChart3 size={24} />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">Predictive Analytics</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">
-                   AI menganalisis pola pergerakan harian untuk memprediksi potensi kecelakaan dan memberikan rekomendasi keselamatan proaktif.
-                </p>
-            </div>
+            {/* Feature 4 */}
+            <FeatureCard 
+              icon={<BarChart3 size={32} />}
+              title="Predictive AI"
+              desc="Menganalisis pola pergerakan harian untuk memprediksi potensi kecelakaan sebelum benar-benar terjadi."
+              color="purple"
+            />
+
+            {/* Feature 5 */}
+            <FeatureCard 
+              icon={<Smartphone size={32} />}
+              title="Masinis Tablet App"
+              desc="Notifikasi visual dan audio langsung ke tablet di kabin masinis saat ada objek menghalangi rel."
+              color="indigo"
+            />
+
+            {/* Feature 6 */}
+            <FeatureCard 
+              icon={<Server size={32} />}
+              title="Local Edge Computing"
+              desc="Pemrosesan data dilakukan di lokasi (Edge), memastikan latensi mendekati nol tanpa ganguan sinyal internet."
+              color="slate"
+            />
 
           </div>
         </div>
       </section>
 
-      {/* --- SECTION: HOW IT WORKS (VERTICAL TIMELINE) --- */}
-      <section id="technology" className="py-32 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-20">
-             <span className="text-[#F6841F] font-bold tracking-widest text-sm uppercase mb-2 block">Workflow</span>
-             <h2 className="text-4xl font-bold text-slate-900">Alur Kerja Sistem</h2>
+      {/* =========================================
+          SECTION 4: FOOTER
+         ========================================= */}
+      <footer className="bg-[#1e293b] text-white py-12 border-t-8 border-[#F6841F]">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <div className="mb-8">
+            <h3 className="text-2xl font-black tracking-tight mb-2">AEON RAILGUARD</h3>
+            <p className="text-slate-400 text-sm">Sistem Keselamatan Perkeretaapian Berbasis AI</p>
           </div>
-
-          <div className="space-y-12 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-            
-            <TimelineItem 
-               step="01"
-               title="Deteksi Visual"
-               desc="Kamera CCTV High-FPS menangkap visual perlintasan secara real-time, siang dan malam."
-               icon={<Camera className="w-6 h-6 text-white" />}
-            />
-            
-            <TimelineItem 
-               step="02"
-               title="Analisis Kecerdasan Buatan"
-               desc="Unit pemroses lokal (Edge Computing) mendeteksi keberadaan manusia, kendaraan, atau halangan di rel dalam hitungan milidetik."
-               icon={<Cpu className="w-6 h-6 text-white" />}
-               isRight
-            />
-            
-            <TimelineItem 
-               step="03"
-               title="Aktivasi Peringatan"
-               desc="Jika bahaya terdeteksi saat kereta mendekat (<2KM), sirine lokal berbunyi keras dan lampu strobo menyala."
-               icon={<Volume2 className="w-6 h-6 text-white" />}
-            />
-
-            <TimelineItem 
-               step="04"
-               title="Intervensi Lalu Lintas"
-               desc="Sistem mengirim sinyal ke lampu lalu lintas terdekat untuk menahan arus kendaraan menuju perlintasan."
-               icon={<Activity className="w-6 h-6 text-white" />}
-               isRight
-            />
-
+          <div className="flex justify-center gap-8 text-sm text-slate-400 font-medium">
+             <Link href="#" className="hover:text-[#F6841F]">Tentang Kami</Link>
+             <Link href="#" className="hover:text-[#F6841F]">Hubungi Tim</Link>
+             <Link href="#" className="hover:text-[#F6841F]">Dokumentasi API</Link>
+             <Link href="#" className="hover:text-[#F6841F]">Kebijakan Privasi</Link>
           </div>
-
-        </div>
-      </section>
-
-      {/* --- FOOTER --- */}
-      <footer id="contact" className="bg-slate-900 pt-20 pb-10 text-slate-400">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
-           
-           {/* Brand */}
-           <div className="space-y-6">
-             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-slate-800 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                 A
-               </div>
-               <span className="text-2xl font-bold text-white tracking-tight">AEON RAILGUARD</span>
-             </div>
-             <p className="max-w-xs leading-relaxed">
-               Membangun masa depan keselamatan transportasi Indonesia melalui inovasi teknologi yang inklusif dan berkelanjutan.
-             </p>
-           </div>
-
-           {/* Links */}
-           <div className="grid grid-cols-2 gap-8">
-             <div>
-               <h4 className="text-white font-bold mb-6">Navigasi</h4>
-               <ul className="space-y-4 text-sm">
-                 <li><Link href="#" className="hover:text-[#F6841F] transition-colors">Beranda</Link></li>
-                 <li><Link href="#" className="hover:text-[#F6841F] transition-colors">Tentang Kami</Link></li>
-                 <li><Link href="#" className="hover:text-[#F6841F] transition-colors">Produk</Link></li>
-               </ul>
-             </div>
-             <div>
-               <h4 className="text-white font-bold mb-6">Legal</h4>
-               <ul className="space-y-4 text-sm">
-                 <li><Link href="#" className="hover:text-[#F6841F] transition-colors">Privacy Policy</Link></li>
-                 <li><Link href="#" className="hover:text-[#F6841F] transition-colors">Terms of Service</Link></li>
-               </ul>
-             </div>
-           </div>
-
-           {/* Contact */}
-           <div>
-             <h4 className="text-white font-bold mb-6">Hubungi Kami</h4>
-             <ul className="space-y-4 text-sm">
-               <li className="flex items-center gap-3">
-                 <Mail size={16} className="text-[#F6841F]" /> 
-                 <span>partnership@aeon-railguard.id</span>
-               </li>
-               <li className="flex items-start gap-3">
-                 <MapPin size={16} className="text-[#F6841F] mt-1" /> 
-                 <span>Jombang, Jawa Timur, Indonesia</span>
-               </li>
-               <li className="flex items-center gap-3">
-                 <Phone size={16} className="text-[#F6841F]" /> 
-                 <span>+62 812-3456-7890</span>
-               </li>
-             </ul>
-           </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-slate-800 text-center text-sm">
-          <p>&copy; 2025 Team GenZ AI. All Rights Reserved.</p>
+          <div className="mt-12 pt-8 border-t border-slate-700 text-slate-500 text-xs">
+            &copy; 2025 Team GenZ AI Jombang. All Rights Reserved.
+          </div>
         </div>
       </footer>
-
     </div>
   );
 }
 
-// --- SUBCOMPONENTS ---
+// --- SUBCOMPONENT: FEATURE CARD ---
+function FeatureCard({ icon, title, desc, color }: { icon: React.ReactNode, title: string, desc: string, color: string }) {
+  
+  const colorClasses:Record<string, string> = {
+    blue: "bg-blue-50 text-blue-600 border-blue-100 group-hover:border-blue-300",
+    green: "bg-green-50 text-green-600 border-green-100 group-hover:border-green-300",
+    orange: "bg-orange-50 text-orange-600 border-orange-100 group-hover:border-orange-300",
+    purple: "bg-purple-50 text-purple-600 border-purple-100 group-hover:border-purple-300",
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100 group-hover:border-indigo-300",
+    slate: "bg-slate-50 text-slate-600 border-slate-100 group-hover:border-slate-300",
+  };
 
-function TimelineItem({ step, title, desc, icon, isRight }: { step: string, title: string, desc: string, icon: React.ReactNode, isRight?: boolean }) {
+  const currentClass = colorClasses[color] || colorClasses.blue;
+
   return (
-    <div className={`relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group ${isRight ? 'md:flex-row-reverse' : ''}`}>
-      
-      {/* Icon Circle (Center) */}
-      <div className="absolute left-0 md:left-1/2 w-10 h-10 -ml-5 bg-[#2D3588] rounded-full border-4 border-slate-100 flex items-center justify-center shadow-lg z-10 group-hover:scale-110 transition-transform duration-300">
-        <div className="w-5 h-5">
-           {/* Simple dot or icon if needed inside small circle, keeping clean for now */}
-           <div className="w-full h-full bg-white/20 rounded-full animate-pulse"></div>
-        </div>
+    <div className="group bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300">
+      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 transition-colors ${currentClass.split(' ').slice(0,2).join(' ')}`}>
+        {icon}
       </div>
-
-      {/* Content Card */}
-      <div className="w-full md:w-5/12 pl-16 md:pl-0 md:px-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all group-hover:-translate-y-1 duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${isRight ? 'bg-[#F6841F]' : 'bg-[#2D3588]'}`}>
-              {icon}
-            </div>
-            <span className="text-4xl font-black text-slate-100">{step}</span>
-          </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-          <p className="text-slate-600 text-sm leading-relaxed">{desc}</p>
-        </div>
-      </div>
-      
-      {/* Spacer for opposite side */}
-      <div className="hidden md:block w-5/12"></div>
+      <h3 className="text-xl font-bold text-[#2D3588] mb-3 group-hover:text-[#F6841F] transition-colors">{title}</h3>
+      <p className="text-slate-600 text-sm leading-relaxed">
+        {desc}
+      </p>
     </div>
   );
 }
