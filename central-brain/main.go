@@ -249,8 +249,13 @@ func main() {
 	app.Get("/api/status", handleGetStatus)
 	app.Get("/api/hierarchy", handleGetHierarchy)
 	app.Get("/api/city-status", handleGetCityStatus)
+	app.Get("/api/incidents", handleGetIncidentHistory)
 	app.Post("/api/incident", handleIncident)
 	app.Post("/api/reset", handleReset)
+
+	// Demo God Mode
+	app.Post("/api/demo/trigger", handleDemoTrigger)
+	app.Get("/api/demo/status", handleDemoStatus)
 
 	// WebSocket
 	app.Use("/ws", func(c *fiber.Ctx) error {
@@ -276,8 +281,8 @@ func main() {
 
 func printBanner() {
 	log.Println("╔══════════════════════════════════════════════════════════╗")
-	log.Println("║     AEON RAILGUARD - CENTRAL BRAIN v3.0                  ║")
-	log.Println("║     Smart City State Machine Edition                     ║")
+	log.Println("║     AEON RAILGUARD - CENTRAL BRAIN v3.1                  ║")
+	log.Println("║     Smart City State Machine + Demo God Mode             ║")
 	log.Println("╠══════════════════════════════════════════════════════════╣")
 	log.Println("║  HTTP Server  : http://localhost:8080                    ║")
 	log.Println("║  WebSocket    : ws://localhost:8080/ws                   ║")
@@ -285,6 +290,7 @@ func printBanner() {
 	log.Println("║  GET  /api/hierarchy   - Nested JSON Tree (RBAC)         ║")
 	log.Println("║  GET  /api/status      - Train & system status           ║")
 	log.Println("║  GET  /api/city-status - Smart City state machine        ║")
+	log.Println("║  POST /api/demo/trigger- DEMO GOD MODE (30s Critical)    ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
 }
 
