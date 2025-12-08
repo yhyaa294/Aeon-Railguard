@@ -1,14 +1,63 @@
-# Dependencies
-node_modules/
-/ai-engine/__pycache__/
-/ai-engine/venv/
+# ============================================
+# AEON RAILGUARD - GITIGNORE
+# Code only - Large files on Google Drive
+# ============================================
 
-# Build outputs
-/central-brain/railguard-brain.exe
+# --- LARGE FILES (USE GOOGLE DRIVE) ---
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.zip
+*.tar.gz
+*.rar
+*.pt
+*.onnx
+.gitattributes
+
+# --- AI ENGINE DATA ---
+ai-engine/datasets/
+ai-engine/inference/output/
+ai-engine/evidence/
+ai-engine/models/*.pt
+
+# --- DEPENDENCIES ---
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# --- BUILD OUTPUTS ---
 /central-brain/*.exe
 /command-dashboard/.next/
 /command-dashboard/out/
+/aeon-railguard-ui/.next/
+/aeon-railguard-ui/out/
 
-# Environment variables
+# --- ENVIRONMENT & SECRETS ---
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# --- OS GENERATED ---
 .DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- IDE ---
+.idea/
+.vscode/
+*.swp
+*~

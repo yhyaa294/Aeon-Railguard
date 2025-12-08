@@ -207,6 +207,25 @@ Aeon-Railguard/
 
 ---
 
+## 📂 External Resources (Dataset & Media)
+
+Karena keterbatasan GitHub (max 100MB/file), dataset dan media disimpan di Google Drive:
+
+| Resource | Link | Keterangan |
+|----------|------|------------|
+| 📽️ **Video Training** | [Google Drive](https://drive.google.com/drive/folders/1ORK_rs61H6-Bvjnoo3fjQgpnP0WlgIPf?usp=sharing) | Video perlintasan kereta untuk demo AI |
+| 📸 **Dataset Gambar** | [Google Drive](https://drive.google.com/drive/folders/1ORK_rs61H6-Bvjnoo3fjQgpnP0WlgIPf?usp=sharing) | Sorted training images (motor, mobil, orang, kereta) |
+| 🎨 **Presentasi** | [Canva](https://www.canva.com/design/DAG6zLVFxrs/oU-DA0C1e9cb53sBO8eTug/edit) | Slide presentasi project |
+
+### Setup Dataset:
+```bash
+# Download dari Google Drive, lalu extract ke:
+ai-engine/datasets/sorted_data/
+ai-engine/datasets/videos/
+```
+
+---
+
 ## 🏆 Team
 
 <p align="center">
