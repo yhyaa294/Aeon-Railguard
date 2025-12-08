@@ -19,7 +19,9 @@ import {
   Thermometer,
   Cloud,
   Layers,
-  Server
+  Server,
+  ChevronRight,
+  Home
 } from "lucide-react";
 
 // Dynamically import MapWidget to avoid SSR issues with Leaflet
@@ -37,7 +39,9 @@ export default function DashboardPage() {
     cityStatus,
     getFilteredView,
     selectPost,
-    selectUnit
+    selectUnit,
+    selectNode,
+    breadcrumbs
   } = useDashboard();
 
   // Helper to ensure we have data to display
@@ -58,6 +62,26 @@ export default function DashboardPage() {
         <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
              style={{ backgroundImage: 'radial-gradient(#2D3588 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
         </div>
+
+        {/* BREADCRUMB NAVIGATION */}
+        <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6 bg-white/50 backdrop-blur-sm p-2 rounded-lg w-fit border border-slate-200/50 shadow-sm">
+          <div className="flex items-center hover:text-[#2D3588] cursor-pointer transition-colors" onClick={() => dataTree && selectNode(dataTree.id, 'region')}>
+            <Home size={14} />
+          </div>
+          {breadcrumbs.map((node, index) => (
+            <div key={node.id} className="flex items-center gap-2">
+              <ChevronRight size={14} className="opacity-50" />
+              <span 
+                onClick={() => selectNode(node.id, node.type)}
+                className={`cursor-pointer hover:text-[#2D3588] transition-colors ${
+                  index === breadcrumbs.length - 1 ? 'font-bold text-[#2D3588] bg-blue-50 px-2 py-0.5 rounded' : ''
+                }`}
+              >
+                {node.name}
+              </span>
+            </div>
+          ))}
+        </nav>
 
         {/* Emergency Banner */}
         <AnimatePresence>

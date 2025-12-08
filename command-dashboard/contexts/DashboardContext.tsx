@@ -67,6 +67,7 @@ interface DashboardState {
 }
 
 interface DashboardContextType extends DashboardState {
+  breadcrumbs: SelectedNode[];
   setCurrentRole: (role: UserRole) => void;
   selectNode: (id: string, type: SelectedNodeType) => void;
   selectPost: (post: Post) => void;
@@ -199,11 +200,101 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     fetchHierarchy(role);
   }, [fetchHierarchy]);
 
+  const [breadcrumbs, setBreadcrumbs] = useState<SelectedNode[]>([]);
+
+  // ... (previous state declarations)
+
+  // Helper to build path to a node
+  const buildBreadcrumbs = useCallback((node: SelectedNode, tree: Region): SelectedNode[] => {
+    const path: SelectedNode[] = [];
+    
+    // Level 1: Region (Always root)
+    path.push({
+      id: tree.id,
+      name: tree.name,
+      type: 'region',
+      data: tree
+    });
+
+    if (node.type === 'region') return path;
+
+    // Search logic
+    for (const station of tree.stations) {
+      if (node.type === 'station' && station.id === node.id) {
+        path.push(node);
+        return path;
+      }
+      
+      // If target is inside this station
+      let stationMatch = false;
+      if (node.type === 'post' || node.type === 'unit') {
+         // Check if this station contains the post/unit
+         const containsPost = station.posts.some(p => {
+             if (p.id === node.id && node.type === 'post') return true;
+             if (node.type === 'unit') {
+                 return p.units.some(u => u.id === node.id);
+             }
+             return false;
+         });
+         
+         if (containsPost) {
+             path.push({
+                 id: station.id,
+                 name: station.name,
+                 type: 'station',
+                 data: station
+             });
+             stationMatch = true;
+         }
+      }
+
+      if (stationMatch) {
+          for (const post of station.posts) {
+              if (node.type === 'post' && post.id === node.id) {
+                  path.push(node);
+                  return path;
+              }
+              
+              if (node.type === 'unit') {
+                  const containsUnit = post.units.some(u => u.id === node.id);
+                  if (containsUnit) {
+                      path.push({
+                          id: post.id,
+                          name: post.name,
+                          type: 'post',
+                          data: post
+                      });
+                      path.push(node);
+                      return path;
+                  }
+              }
+          }
+      }
+    }
+    return path;
+  }, []);
+
+  // Update breadcrumbs when selectedNode changes
+  useEffect(() => {
+    if (selectedNode && dataTree) {
+      setBreadcrumbs(buildBreadcrumbs(selectedNode, dataTree));
+    } else {
+      setBreadcrumbs([]);
+    }
+  }, [selectedNode, dataTree, buildBreadcrumbs]);
+
   // Node selection helpers
   const selectNode = useCallback((id: string, type: SelectedNodeType) => {
     if (!dataTree) return;
 
     let foundNode: SelectedNode | null = null;
+    
+    // Explicitly handle Region Selection
+    if (type === 'region' && dataTree.id === id) {
+        foundNode = { id, name: dataTree.name, type: 'region', data: dataTree };
+        setSelectedNode(foundNode);
+        return;
+    }
 
     // Search through hierarchy
     for (const station of dataTree.stations) {
@@ -231,6 +322,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setSelectedNode(foundNode);
     }
   }, [dataTree]);
+
+  // ... (rest of the file)
 
   const selectPost = useCallback((post: Post) => {
     setSelectedNode({
@@ -311,6 +404,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     triggerEmergency,
     clearEmergency,
     getFilteredView,
+    breadcrumbs,
   };
 
   return (
