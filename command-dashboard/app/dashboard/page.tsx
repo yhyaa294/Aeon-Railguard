@@ -1,33 +1,56 @@
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useDashboard, Post, Unit, Station, Region } from '@/contexts/DashboardContext';
+import { useDashboard } from '@/contexts/DashboardContext';
 import SidebarTree from './components/SidebarTree';
 import {
   Activity,
-  MapPin,
   Video,
-  Grid,
   AlertTriangle,
-  Wifi,
-  WifiOff,
   RefreshCw,
   Maximize2,
   Radio,
-  Thermometer,
-  Cloud,
-  Layers,
-  Server,
+  Camera,
+  Clock,
+  Shield,
+  Siren,
+  Lock,
+  Power,
+  Droplets,
+  Brain,
+  Phone,
+  Mic,
+  AlertCircle,
+  Zap,
+  MonitorSpeaker,
   ChevronRight,
-  Home
+  Home,
+  Eye,
+  Server,
+  Gauge,
+  Radar,
+  History,
+  FileText,
+  HardDrive,
+  LogOut,
+  Volume2,
+  Flashlight,
+  RotateCcw,
+  Target,
+  Wifi,
+  Thermometer,
+  Bell,
+  Settings,
+  Crosshair,
+  MapPin
 } from "lucide-react";
 
-// Dynamically import MapWidget to avoid SSR issues with Leaflet
 const MapWidget = dynamic(() => import('@/components/MapWidget'), {
   ssr: false,
-  loading: () => <div className="h-full w-full bg-slate-100 animate-pulse rounded-xl" />
+  loading: () => <div className="h-full w-full bg-slate-800 animate-pulse rounded-lg" />
 });
 
 export default function DashboardPage() {
@@ -44,408 +67,549 @@ export default function DashboardPage() {
     breadcrumbs
   } = useDashboard();
 
-  // Helper to ensure we have data to display
   const filteredData = useMemo(() => getFilteredView(), [getFilteredView]);
+  const [systemTime, setSystemTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setSystemTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] overflow-hidden bg-slate-50 font-sans text-slate-800">
+    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden bg-slate-950 font-sans text-white">
 
-      {/* LEFT: HIERARCHICAL SIDEBAR */}
-      <div className="w-72 md:w-80 flex-shrink-0 bg-white border-r border-slate-200 z-10 flex flex-col">
-        <SidebarTree />
-      </div>
-
-      {/* RIGHT: MAIN VIEW WORKSPACE */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 relative">
+      {/* ====== LEFT: NAVIGATION SIDEBAR ====== */}
+      <div className="w-72 flex-shrink-0 bg-gradient-to-b from-[#2D3588] via-[#232b6b] to-[#1a2057] border-r border-white/10 z-10 flex flex-col shadow-2xl shadow-blue-900/30">
         
-        {/* Background Grid Pattern for Enterprise Feel */}
-        <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
-             style={{ backgroundImage: 'radial-gradient(#2D3588 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+        {/* Logo Header */}
+        <div className="h-16 flex items-center px-4 border-b border-white/10 bg-black/30 backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-1.5 rounded-lg shadow-lg shadow-white/10">
+              <img src="/images/logo%20Aeon.png" alt="Aeon Logo" className="h-7 w-auto" />
+            </div>
+            <div>
+              <div className="font-black tracking-wide text-white text-sm">AEON RAILGUARD</div>
+              <div className="text-[9px] text-cyan-300 font-mono tracking-[0.2em] uppercase flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                WAR ROOM v2.0
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* BREADCRUMB NAVIGATION */}
-        <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6 bg-white/50 backdrop-blur-sm p-2 rounded-lg w-fit border border-slate-200/50 shadow-sm">
-          <div className="flex items-center hover:text-[#2D3588] cursor-pointer transition-colors" onClick={() => dataTree && selectNode(dataTree.id, 'region')}>
-            <Home size={14} />
+        {/* Quick Nav Grid */}
+        <div className="px-3 py-4 border-b border-white/10 bg-black/20">
+          <div className="text-[9px] font-bold text-cyan-300/70 uppercase tracking-[0.15em] mb-3 px-1 flex items-center gap-2">
+            <Radar size={10} />
+            QUICK ACCESS
           </div>
-          {breadcrumbs.map((node, index) => (
-            <div key={node.id} className="flex items-center gap-2">
-              <ChevronRight size={14} className="opacity-50" />
-              <span 
-                onClick={() => selectNode(node.id, node.type)}
-                className={`cursor-pointer hover:text-[#2D3588] transition-colors ${
-                  index === breadcrumbs.length - 1 ? 'font-bold text-[#2D3588] bg-blue-50 px-2 py-0.5 rounded' : ''
-                }`}
-              >
-                {node.name}
-              </span>
+          <div className="grid grid-cols-2 gap-2">
+            <QuickNavButton icon={<Radar size={16} />} label="Live View" active />
+            <QuickNavButton icon={<History size={16} />} label="History" />
+            <QuickNavButton icon={<HardDrive size={16} />} label="Devices" />
+            <QuickNavButton icon={<FileText size={16} />} label="Reports" />
+          </div>
+        </div>
+
+        {/* Hierarchical Tree View */}
+        <div className="flex-1 overflow-hidden">
+          <SidebarTree />
+        </div>
+
+        {/* System Status */}
+        <div className="p-3 border-t border-white/10 bg-black/30">
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div className="flex items-center gap-2 text-green-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <span>System OK</span>
             </div>
-          ))}
-        </nav>
+            <div className="flex items-center gap-2 text-blue-400">
+              <Wifi size={12} />
+              <span>Connected</span>
+            </div>
+          </div>
+        </div>
+
+        {/* User Profile */}
+        <div className="p-3 border-t border-white/10 bg-black/40">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 border border-white/20 flex items-center justify-center text-sm font-bold text-white shadow-lg">
+              BS
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-sm text-white truncate">Budi Santoso</div>
+              <div className="text-[10px] text-cyan-300">Station Master</div>
+            </div>
+            <Link href="/" className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 transition-all">
+              <LogOut size={14} className="text-red-400" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* ====== CENTER: MAIN COMMAND VIEW ====== */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 relative">
+        
+        {/* Cyberpunk Grid Background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 opacity-[0.03]" 
+               style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-900/5 via-transparent to-purple-900/5" />
+        </div>
 
         {/* Emergency Banner */}
         <AnimatePresence>
           {isEmergency && (
             <motion.div
-              initial={{ height: 0, opacity: 0, marginBottom: 0 }}
-              animate={{ height: 'auto', opacity: 1, marginBottom: 24 }}
-              exit={{ height: 0, opacity: 0, marginBottom: 0 }}
-              className="bg-red-600 text-white rounded-xl shadow-xl overflow-hidden relative z-20"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-gradient-to-r from-red-600 via-red-700 to-red-600 text-white rounded-xl shadow-2xl shadow-red-500/30 overflow-hidden mb-4 border border-red-500"
             >
-              <div className="px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="bg-white/20 p-2 rounded-full animate-pulse">
-                    <AlertTriangle size={24} />
+              <div className="px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2.5 rounded-full animate-bounce">
+                    <AlertTriangle size={22} />
                   </div>
                   <div>
-                    <div className="font-bold text-lg tracking-wide">EMERGENCY PROTOCOL ACTIVE</div>
-                    <div className="text-red-100 text-sm font-medium">
-                      Traffic: {cityStatus?.traffic_light} | Rail: {cityStatus?.rail_crossing} | Units Dispatched
-                    </div>
+                    <div className="font-black text-sm tracking-wider uppercase">EMERGENCY PROTOCOL ACTIVE</div>
+                    <div className="text-red-100 text-xs font-mono">All units dispatched • Response team en route • ETA: 2 min</div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs font-mono bg-white/20 px-3 py-1 rounded inline-block">
-                    T-MINUS: 00:00:00
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="text-[10px] text-red-200">ELAPSED</div>
+                    <div className="font-mono text-lg font-bold">00:02:34</div>
                   </div>
+                  <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-bold text-sm transition-colors">
+                    ACKNOWLEDGE
+                  </button>
                 </div>
-              </div>
-              <div className="h-1 bg-white/30 w-full overflow-hidden">
-                 <div className="h-full bg-white w-1/3 animate-progress-indeterminate"></div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* View Header */}
-        <header className="flex items-center justify-between mb-8 relative z-10">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
-              {selectedNode?.type === 'region' && <Layers size={12} />}
-              {selectedNode?.type === 'station' && <Grid size={12} />}
-              {selectedNode?.type === 'post' && <Video size={12} />}
-              {selectedNode?.type === 'unit' && <Radio size={12} />}
-              <span>{selectedNode?.type || 'SYSTEM'} LEVEL VIEW</span>
-            </div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-              {selectedNode?.name || 'Daop 7 Overview'}
-            </h1>
+        {/* TOP ROW: Stats Cards */}
+        <div className="grid grid-cols-4 gap-3 mb-4 relative z-10">
+          <StatCard 
+            icon={<AlertCircle className="w-5 h-5" />} 
+            label="Total Events (24h)" 
+            value="847" 
+            trend="+12%"
+            trendUp={true}
+            color="orange" 
+          />
+          <StatCard 
+            icon={<Camera className="w-5 h-5" />} 
+            label="Active Cameras" 
+            value="24/26" 
+            trend="92%"
+            trendUp={true}
+            color="green" 
+          />
+          <StatCard 
+            icon={<Clock className="w-5 h-5" />} 
+            label="Avg Response" 
+            value="2.4s" 
+            trend="-0.3s"
+            trendUp={true}
+            color="blue" 
+          />
+          <StatCard 
+            icon={<Server className="w-5 h-5" />} 
+            label="System Health" 
+            value="98.2%" 
+            trend="Optimal"
+            trendUp={true}
+            color="cyan" 
+          />
+        </div>
+
+        {/* MAIN VIDEO GRID */}
+        <div className="grid grid-cols-12 gap-3 relative z-10">
+          {/* Large Primary Feed - 2x2 */}
+          <div className="col-span-8 row-span-2">
+            <VideoFeed 
+              title="CAM-01 Main Crossing" 
+              location="JPL 102 Jombang"
+              isPrimary
+              status="recording"
+              aiDetection={{ label: "PERSON", confidence: 98.2, bbox: true }}
+            />
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-600">
-               <Cloud size={16} className="text-blue-500" />
-               <span className="font-bold">Sunny 32°C</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-600">
-               <Server size={16} className="text-green-500" />
-               <span className="font-bold text-green-700">System Normal</span>
-            </div>
-          </div>
-        </header>
-
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-96 gap-4">
-            <RefreshCw className="animate-spin text-[#2D3588]" size={48} />
-            <div className="text-slate-400 font-medium">Synchronizing Data...</div>
-          </div>
-        ) : (
-          /* DYNAMIC CONTENT SWITCHER */
-          <AnimatePresence mode="wait">
-            
-            {/* SCENARIO A: STATION SELECTED (or no selection default) */}
-            {(selectedNode?.type === 'station' || (!selectedNode && dataTree)) && (
-              <motion.div
-                key="station-view"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <StationOverview 
-                  station={selectedNode?.data as Station || dataTree?.stations[0]} 
-                  onSelectPost={selectPost}
-                />
-              </motion.div>
-            )}
-
-            {/* SCENARIO B: POST SELECTED */}
-            {selectedNode?.type === 'post' && (
-              <motion.div
-                key="post-view"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <PostMonitor 
-                  post={selectedNode.data as Post} 
-                  onSelectUnit={selectUnit} 
-                />
-              </motion.div>
-            )}
-
-            {/* SCENARIO C: REGION SELECTED */}
-            {selectedNode?.type === 'region' && (
-              <motion.div
-                key="region-view"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <RegionMap region={selectedNode.data as Region} />
-              </motion.div>
-            )}
-
-            {/* SCENARIO D: UNIT SELECTED */}
-            {selectedNode?.type === 'unit' && (
-              <motion.div
-                key="unit-view"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                <UnitSingleView unit={selectedNode.data as Unit} />
-              </motion.div>
-            )}
-
-          </AnimatePresence>
-        )}
-
-      </div>
-    </div>
-  );
-}
-
-// ----------------------------------------------------------------------
-// SUB-COMPONENTS
-// ----------------------------------------------------------------------
-
-// SCENARIO A: STATION OVERVIEW (Grid of Posts)
-function StationOverview({ station, onSelectPost }: { station: Station | undefined, onSelectPost: (post: Post) => void }) {
-  if (!station) return <div className="p-8 text-center text-slate-400">No station data available.</div>;
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-700">Active Posts ({station.posts.length})</h2>
-        <div className="text-sm text-slate-500">Head Officer: <span className="font-semibold">{station.head_officer}</span></div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {station.posts.map(post => {
-          const activeUnits = post.units.filter(u => u.status === 'ONLINE').length;
-          const hasWarning = post.units.some(u => u.status === 'WARNING');
           
-          return (
-            <motion.div
-              key={post.id}
-              whileHover={{ y: -4, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" }}
-              onClick={() => onSelectPost(post)}
-              className={`bg-white rounded-xl border-2 cursor-pointer transition-all overflow-hidden ${
-                hasWarning ? 'border-orange-200' : 'border-slate-100'
-              }`}
-            >
-              {/* Card Header */}
-              <div className={`px-5 py-4 border-b ${hasWarning ? 'bg-orange-50 border-orange-100' : 'bg-slate-50 border-slate-100'}`}>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-lg">{post.name}</h3>
-                    <p className="text-xs text-slate-500 font-mono mt-1">{post.geo_location}</p>
-                  </div>
-                  <div className={`px-2 py-1 rounded text-xs font-bold ${
-                    hasWarning ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-700'
-                  }`}>
-                    {hasWarning ? 'WARNING' : 'SECURE'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-5">
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-slate-50 p-3 rounded-lg text-center">
-                    <div className="text-xs text-slate-400 font-bold uppercase">CCTV Active</div>
-                    <div className="text-xl font-black text-[#2D3588]">{activeUnits}/{post.units.length}</div>
-                  </div>
-                  <div className="bg-slate-50 p-3 rounded-lg text-center">
-                     <div className="text-xs text-slate-400 font-bold uppercase">Latency</div>
-                     <div className="text-xl font-black text-slate-700">24ms</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2 text-xs text-blue-600 font-bold hover:underline">
-                  <Maximize2 size={12} /> View Detailed Monitoring
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// SCENARIO B: POST MONITOR (Grid of CCTV Feeds)
-function PostMonitor({ post, onSelectUnit }: { post: Post, onSelectUnit: (unit: Unit) => void }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-         <h2 className="text-lg font-bold text-slate-700">Live Feeds</h2>
-         <div className="flex gap-2">
-            <span className="px-3 py-1 bg-white border border-slate-200 rounded text-xs font-bold text-slate-600">
-               Total Units: {post.units.length}
-            </span>
-         </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {post.units.map(unit => (
-          <div 
-            key={unit.id} 
-            className="bg-white rounded-xl overflow-hidden shadow-sm border border-slate-200 group cursor-pointer"
-            onClick={() => onSelectUnit(unit)}
-          >
-            {/* Video Feed Placeholder */}
-            <div className="relative aspect-video bg-black">
-              <img 
-                src="/images/perlintasan%20ilegal.png" 
-                alt="Feed" 
-                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" 
-              />
-              
-              {/* Overlays */}
-              <div className="absolute top-3 left-3 flex gap-2">
-                 <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">LIVE</span>
-                 <span className="bg-black/50 text-white text-[10px] font-mono px-2 py-0.5 rounded backdrop-blur-sm">
-                   {unit.id}
-                 </span>
-              </div>
-
-              <div className="absolute bottom-3 right-3">
-                 <div className={`w-3 h-3 rounded-full border-2 border-white ${
-                    unit.status === 'ONLINE' ? 'bg-green-500' : 'bg-red-500'
-                 }`}></div>
-              </div>
-            </div>
-
-            {/* Meta */}
-            <div className="p-4 flex justify-between items-center">
-               <div>
-                  <div className="font-bold text-slate-800 text-sm">{unit.name}</div>
-                  <div className="text-xs text-slate-400 mt-0.5">AI Detection Active</div>
-               </div>
-               <div className="bg-slate-100 p-2 rounded-full text-slate-500 group-hover:bg-[#2D3588] group-hover:text-white transition-colors">
-                  <Maximize2 size={16} />
-               </div>
-            </div>
+          {/* Secondary Feed */}
+          <div className="col-span-4">
+            <VideoFeed 
+              title="CAM-02 East Gate" 
+              location="Entry Point A" 
+              status="recording"
+            />
           </div>
-        ))}
+          <div className="col-span-4">
+            <VideoFeed 
+              title="CAM-03 Platform" 
+              location="Platform 1" 
+              status="recording"
+            />
+          </div>
+          
+          {/* Bottom Row */}
+          <div className="col-span-4">
+            <VideoFeed 
+              title="CAM-04 West Gate" 
+              location="Entry Point B" 
+              status="recording"
+            />
+          </div>
+          <div className="col-span-4">
+            <VideoFeed 
+              title="CAM-05 Parking" 
+              location="Zone C" 
+              status="idle"
+            />
+          </div>
+          <div className="col-span-4">
+            <VideoFeed 
+              title="CAM-06 Reserve" 
+              location="Backup Unit" 
+              status="offline"
+            />
+          </div>
+        </div>
+
+        {/* BOTTOM: Mini Map */}
+        <div className="mt-4 h-48 bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden relative shadow-xl">
+          <MapWidget status="SAFE" />
+          <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-2 border border-white/10">
+            <Eye className="w-3.5 h-3.5 text-green-400" />
+            <span>LIVE TRACKING</span>
+            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+          </div>
+          <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-mono text-cyan-400 border border-cyan-500/20">
+            LAT: -7.5456 | LNG: 112.2654
+          </div>
+        </div>
+      </div>
+
+      {/* ====== RIGHT: ACTION PANEL (GLASSMORPHISM) ====== */}
+      <div className="w-80 flex-shrink-0 bg-slate-900/50 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden relative">
         
-        {/* Add Camera Slot */}
-        <div className="aspect-video rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:border-[#2D3588] hover:text-[#2D3588] transition-colors cursor-pointer bg-slate-50">
-           <div className="bg-white p-3 rounded-full shadow-sm mb-2">
-             <Video size={24} />
-           </div>
-           <span className="text-sm font-bold">Connect New Stream</span>
+        {/* Glassmorphism Background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800/30 via-slate-900/50 to-slate-950/70 pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        
+        {/* Panel Header */}
+        <div className="flex items-center gap-3 p-4 border-b border-white/10 bg-black/30 backdrop-blur-sm relative z-10">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#F6841F] to-orange-600 shadow-lg shadow-orange-500/30">
+            <MonitorSpeaker className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="font-black text-sm text-white tracking-wide">CONTROL PANEL</div>
+            <div className="text-[10px] text-slate-400 font-mono">Manual Override Controls</div>
+          </div>
+        </div>
+
+        {/* Scrollable Action Groups */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-10">
+          
+          {/* EMERGENCY ACTIONS */}
+          <ActionGroup title="Emergency Response" color="red" icon={<AlertTriangle size={14} />}>
+            <ActionButton 
+              icon={<Lock className="w-5 h-5" />} 
+              label="LOCKDOWN AREA" 
+              sublabel="Activate all barriers"
+              variant="danger" 
+            />
+            <ActionButton 
+              icon={<Siren className="w-5 h-5" />} 
+              label="TRIGGER SIREN" 
+              sublabel="120dB warning"
+              variant="danger" 
+            />
+            <ActionButton 
+              icon={<Volume2 className="w-5 h-5" />} 
+              label="EMERGENCY HORN" 
+              sublabel="3x long blast"
+              variant="danger" 
+            />
+          </ActionGroup>
+
+          {/* MAINTENANCE ACTIONS */}
+          <ActionGroup title="Maintenance" color="blue" icon={<Settings size={14} />}>
+            <ActionButton 
+              icon={<RotateCcw className="w-5 h-5" />} 
+              label="Reboot Unit" 
+              sublabel="Restart selected camera"
+              variant="secondary" 
+            />
+            <ActionButton 
+              icon={<Droplets className="w-5 h-5" />} 
+              label="Wiper On" 
+              sublabel="Clean lens remotely"
+              variant="secondary" 
+            />
+            <ActionButton 
+              icon={<Flashlight className="w-5 h-5" />} 
+              label="Toggle IR Light" 
+              sublabel="Night vision assist"
+              variant="secondary" 
+            />
+            <ActionButton 
+              icon={<Brain className="w-5 h-5" />} 
+              label="Reset AI Model" 
+              sublabel="Recalibrate detection"
+              variant="secondary" 
+            />
+          </ActionGroup>
+
+          {/* COMMUNICATION ACTIONS */}
+          <ActionGroup title="Communication" color="green" icon={<Radio size={14} />}>
+            <ActionButton 
+              icon={<Mic className="w-5 h-5" />} 
+              label="Broadcast Voice" 
+              sublabel="PA System active"
+              variant="primary" 
+            />
+            <ActionButton 
+              icon={<Phone className="w-5 h-5" />} 
+              label="Call Station Master" 
+              sublabel="Direct line"
+              variant="primary" 
+            />
+          </ActionGroup>
+        </div>
+
+        {/* Bottom: Live Metrics Panel */}
+        <div className="p-4 border-t border-white/10 bg-black/40 backdrop-blur-sm relative z-10">
+          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-3 flex items-center gap-2">
+            <Activity size={12} className="text-green-400" />
+            LIVE SYSTEM METRICS
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <MetricBox label="Detection Rate" value="847" unit="/day" color="orange" />
+            <MetricBox label="False Positive" value="2.1" unit="%" color="green" />
+            <MetricBox label="Uptime" value="99.97" unit="%" color="blue" />
+            <MetricBox label="Latency" value="24" unit="ms" color="cyan" />
+          </div>
+          
+          {/* AI Model Info */}
+          <div className="mt-3 p-2 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Brain size={14} className="text-purple-400" />
+                <span className="text-[10px] font-bold text-purple-300">AI MODEL</span>
+              </div>
+              <span className="text-[10px] font-mono text-purple-400">YOLOv8.2</span>
+            </div>
+            <div className="text-[9px] text-purple-400/70 mt-1 font-mono">Confidence: 98.2% | Objects: 4 classes</div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// SCENARIO C: REGION MAP
-function RegionMap({ region }: { region: Region }) {
+// ==================== SUB-COMPONENTS ====================
+
+function StatCard({ icon, label, value, trend, trendUp, color }: { 
+  icon: React.ReactNode, 
+  label: string, 
+  value: string, 
+  trend: string,
+  trendUp: boolean,
+  color: 'green' | 'orange' | 'blue' | 'red' | 'cyan'
+}) {
+  const colors = {
+    green: { bg: 'from-green-500/20 to-green-600/5', border: 'border-green-500/30', text: 'text-green-400', shadow: 'shadow-green-500/10' },
+    orange: { bg: 'from-orange-500/20 to-orange-600/5', border: 'border-orange-500/30', text: 'text-orange-400', shadow: 'shadow-orange-500/10' },
+    blue: { bg: 'from-blue-500/20 to-blue-600/5', border: 'border-blue-500/30', text: 'text-blue-400', shadow: 'shadow-blue-500/10' },
+    red: { bg: 'from-red-500/20 to-red-600/5', border: 'border-red-500/30', text: 'text-red-400', shadow: 'shadow-red-500/10' },
+    cyan: { bg: 'from-cyan-500/20 to-cyan-600/5', border: 'border-cyan-500/30', text: 'text-cyan-400', shadow: 'shadow-cyan-500/10' },
+  };
+  const c = colors[color];
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-[600px] flex flex-col">
-       <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <div>
-            <h2 className="font-bold text-slate-800">Operational Map: {region.name}</h2>
-            <p className="text-xs text-slate-500">Live telemetry from {region.stations.length} stations</p>
-          </div>
-          <div className="flex gap-2 text-xs">
-             <div className="flex items-center gap-1">
-               <span className="w-2 h-2 rounded-full bg-green-500"></span> Normal
-             </div>
-             <div className="flex items-center gap-1">
-               <span className="w-2 h-2 rounded-full bg-orange-500"></span> Warning
-             </div>
-             <div className="flex items-center gap-1">
-               <span className="w-2 h-2 rounded-full bg-red-500"></span> Critical
-             </div>
-          </div>
-       </div>
-       
-       <div className="flex-1 relative bg-slate-100">
-          <MapWidget status="SAFE" />
-          
-          {/* Overlay Stats */}
-          <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur p-4 rounded-xl shadow-lg border border-slate-200 w-64">
-             <div className="text-xs font-bold text-slate-400 uppercase mb-2">Region Statistics</div>
-             <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                   <span className="text-slate-600">Active Trains</span>
-                   <span className="font-bold text-[#2D3588]">14</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                   <span className="text-slate-600">Illegal Crossings</span>
-                   <span className="font-bold text-orange-600">8</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                   <span className="text-slate-600">Avg. Speed</span>
-                   <span className="font-bold text-slate-800">84 km/h</span>
-                </div>
-             </div>
-          </div>
-       </div>
+    <div className={`bg-gradient-to-br ${c.bg} border ${c.border} rounded-xl p-3 backdrop-blur-sm shadow-lg ${c.shadow} relative overflow-hidden`}>
+      <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+      <div className="flex items-center justify-between mb-2 relative">
+        <div className={c.text}>{icon}</div>
+        <span className={`text-[10px] font-mono ${trendUp ? 'text-green-400' : 'text-red-400'}`}>{trend}</span>
+      </div>
+      <div className="text-2xl font-mono font-black text-white relative">{value}</div>
+      <div className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">{label}</div>
     </div>
   );
 }
 
-// SCENARIO D: SINGLE UNIT (Reuse from previous, simplified)
-function UnitSingleView({ unit }: { unit: Unit }) {
+function VideoFeed({ title, location, isPrimary = false, status, aiDetection }: { 
+  title: string, 
+  location: string, 
+  isPrimary?: boolean,
+  status: 'recording' | 'idle' | 'offline',
+  aiDetection?: { label: string, confidence: number, bbox: boolean }
+}) {
+  const statusConfig = {
+    recording: { color: 'bg-red-500', text: 'REC', animate: true },
+    idle: { color: 'bg-yellow-500', text: 'IDLE', animate: false },
+    offline: { color: 'bg-slate-500', text: 'OFFLINE', animate: false },
+  };
+  const s = statusConfig[status];
+
   return (
-    <div className="grid grid-cols-12 gap-6 h-[600px]">
-      {/* Large Player */}
-      <div className="col-span-8 bg-black rounded-xl overflow-hidden relative shadow-lg">
-         <img src="/images/perlintasan%20ilegal.png" className="w-full h-full object-cover opacity-90" alt={unit.name} />
-         <div className="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded">LIVE FEED</div>
-      </div>
+    <div className={`relative bg-slate-900 rounded-xl overflow-hidden border border-slate-700/50 group hover:border-slate-600 transition-all shadow-xl ${isPrimary ? 'h-[340px]' : 'h-40'}`}>
+      {/* Video Placeholder */}
+      <img 
+        src="/images/perlintasan%20ilegal.png" 
+        alt={title}
+        className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
+      />
       
-      {/* Controls */}
-      <div className="col-span-4 flex flex-col gap-4">
-         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex-1">
-            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Radio size={16} className="text-[#2D3588]" /> Telemetry
-            </h3>
-            <div className="space-y-4">
-               <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="text-slate-500 text-sm">Status</span>
-                  <span className={`font-bold ${unit.status === 'ONLINE' ? 'text-green-600' : 'text-red-500'}`}>{unit.status}</span>
-               </div>
-               <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="text-slate-500 text-sm">Coordinates</span>
-                  <span className="font-mono text-sm">{unit.lat}, {unit.long}</span>
-               </div>
-               <div className="flex justify-between border-b border-slate-100 pb-2">
-                  <span className="text-slate-500 text-sm">Model</span>
-                  <span className="font-mono text-sm">Hikvision DarkFighter</span>
-               </div>
+      {/* HUD Overlay */}
+      <div className="absolute inset-0 pointer-events-none">
+        {/* Scanline Effect */}
+        <div className="absolute inset-0 bg-scanline opacity-10" />
+        
+        {/* Top Bar */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/90 via-black/60 to-transparent p-2 flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${s.color} ${s.animate ? 'animate-pulse' : ''}`} />
+            <span className="text-[10px] font-mono text-white/80 uppercase tracking-wider">{s.text}</span>
+            {status === 'recording' && (
+              <span className="text-[9px] font-mono text-red-400 animate-pulse">● LIVE</span>
+            )}
+          </div>
+          <span className="text-[10px] font-mono text-white/60 tabular-nums">
+            {new Date().toLocaleTimeString()}
+          </span>
+        </div>
+
+        {/* AI Bounding Box */}
+        {isPrimary && aiDetection?.bbox && status === 'recording' && (
+          <div className="absolute top-1/3 left-1/4 w-32 h-24 border-2 border-green-400/80 rounded animate-pulse">
+            <div className="absolute -top-6 left-0 bg-green-500 text-[9px] font-mono px-2 py-1 rounded-t text-white flex items-center gap-1 shadow-lg">
+              <Crosshair size={10} />
+              {aiDetection.label} {aiDetection.confidence.toFixed(1)}%
             </div>
-         </div>
-         
-         <div className="bg-[#2D3588] text-white p-5 rounded-xl shadow-lg">
-            <h3 className="font-bold mb-4">Remote Actions</h3>
-            <div className="grid grid-cols-2 gap-3">
-               <button className="bg-white/10 hover:bg-white/20 py-2 rounded text-sm font-semibold transition">Reboot</button>
-               <button className="bg-white/10 hover:bg-white/20 py-2 rounded text-sm font-semibold transition">Wiper</button>
-               <button className="bg-red-500 hover:bg-red-600 py-2 rounded text-sm font-semibold transition col-span-2">Trigger Alarm</button>
-            </div>
-         </div>
+            {/* Corner Markers */}
+            <div className="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-green-400" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-green-400" />
+            <div className="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-green-400" />
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-green-400" />
+          </div>
+        )}
+
+        {/* Frame Brackets */}
+        <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-white/30" />
+        <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-white/30" />
+        <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-white/30" />
+        <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-white/30" />
+
+        {/* Bottom Info Bar */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3">
+          <div className="flex items-center gap-2">
+            <Camera size={12} className="text-cyan-400" />
+            <div className="text-xs font-bold text-white">{title}</div>
+          </div>
+          <div className="flex items-center gap-1 mt-0.5">
+            <MapPin size={10} className="text-slate-400" />
+            <div className="text-[10px] text-slate-400 font-mono">{location}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Expand Button */}
+      <button className="absolute top-2 right-2 p-1.5 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-black/80 border border-white/10">
+        <Maximize2 className="w-4 h-4 text-white" />
+      </button>
+    </div>
+  );
+}
+
+function ActionGroup({ title, color, icon, children }: { 
+  title: string, 
+  color: 'red' | 'blue' | 'green',
+  icon?: React.ReactNode,
+  children: React.ReactNode 
+}) {
+  const colors = {
+    red: { bg: 'bg-red-500/5', border: 'border-red-500/30', text: 'text-red-400', glow: 'shadow-red-500/5' },
+    blue: { bg: 'bg-blue-500/5', border: 'border-blue-500/30', text: 'text-blue-400', glow: 'shadow-blue-500/5' },
+    green: { bg: 'bg-green-500/5', border: 'border-green-500/30', text: 'text-green-400', glow: 'shadow-green-500/5' },
+  };
+  const c = colors[color];
+
+  return (
+    <div className={`rounded-xl p-3 border ${c.border} ${c.bg} backdrop-blur-sm shadow-lg ${c.glow}`}>
+      <div className={`text-[10px] font-bold uppercase tracking-[0.1em] mb-3 flex items-center gap-2 ${c.text}`}>
+        {icon}
+        {title}
+      </div>
+      <div className="space-y-2">
+        {children}
       </div>
     </div>
   );
 }
 
+function ActionButton({ icon, label, sublabel, variant }: { 
+  icon: React.ReactNode, 
+  label: string,
+  sublabel?: string,
+  variant: 'danger' | 'primary' | 'secondary' 
+}) {
+  const variants = {
+    danger: 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white border-red-500/50 shadow-lg shadow-red-500/20',
+    primary: 'bg-gradient-to-r from-[#2D3588] to-blue-700 hover:from-[#3a45a0] hover:to-blue-600 text-white border-blue-500/30 shadow-lg shadow-blue-500/10',
+    secondary: 'bg-slate-800/80 hover:bg-slate-700 text-white border-slate-600/50',
+  };
+
+  return (
+    <button className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm font-bold transition-all active:scale-[0.98] ${variants[variant]}`}>
+      <div className="p-1 bg-white/10 rounded">{icon}</div>
+      <div className="flex-1 text-left">
+        <div className="leading-tight">{label}</div>
+        {sublabel && <div className="text-[9px] font-normal opacity-70">{sublabel}</div>}
+      </div>
+      <ChevronRight size={16} className="opacity-50" />
+    </button>
+  );
+}
+
+function QuickNavButton({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
+  return (
+    <button className={`flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all text-xs font-bold ${
+      active 
+        ? 'bg-white text-[#2D3588] shadow-xl shadow-white/20' 
+        : 'bg-white/10 text-blue-100 hover:bg-white/20 border border-white/10'
+    }`}>
+      {icon}
+      <span className="text-[10px]">{label}</span>
+    </button>
+  );
+}
+
+function MetricBox({ label, value, unit, color }: { 
+  label: string, 
+  value: string, 
+  unit: string,
+  color: 'orange' | 'green' | 'blue' | 'cyan'
+}) {
+  const colors = {
+    orange: 'text-orange-400',
+    green: 'text-green-400',
+    blue: 'text-blue-400',
+    cyan: 'text-cyan-400',
+  };
+
+  return (
+    <div className="bg-white/5 rounded-lg p-2.5 border border-white/10 backdrop-blur-sm">
+      <div className="text-[9px] text-slate-500 uppercase tracking-wider mb-1 font-medium">{label}</div>
+      <div className="flex items-baseline gap-0.5">
+        <span className={`text-lg font-mono font-black ${colors[color]}`}>{value}</span>
+        <span className="text-[10px] text-slate-500 font-mono">{unit}</span>
+      </div>
+    </div>
+  );
+}

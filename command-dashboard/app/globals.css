@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,20 +6,24 @@
 
 @layer base {
   body {
-    /* Enterprise Light Mode */
     @apply bg-slate-50 text-slate-900 antialiased font-sans overflow-x-hidden;
   }
   
-  /* Custom Scrollbar - Clean & Thin */
+  /* Custom Scrollbar - Dark Theme */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-slate-100;
+    @apply bg-slate-900;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+    @apply bg-slate-600 rounded-full hover:bg-slate-500 transition-colors;
+  }
+
+  /* JetBrains Mono for technical data */
+  .font-mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   }
 }
 
@@ -54,6 +58,33 @@
   .kai-header {
     @apply text-[#2D3588] font-bold tracking-tight uppercase text-xs mb-2;
   }
+
+  /* Glassmorphism Panel */
+  .glass-panel {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl;
+  }
+
+  /* Command Center Button Styles */
+  .btn-command {
+    @apply px-4 py-2 rounded-lg font-bold text-sm transition-all active:scale-95;
+  }
+
+  .btn-danger {
+    @apply btn-command bg-gradient-to-r from-red-600 to-red-700 text-white border border-red-500/50 shadow-lg shadow-red-500/20 hover:from-red-500 hover:to-red-600;
+  }
+
+  .btn-primary {
+    @apply btn-command bg-gradient-to-r from-blue-600 to-blue-700 text-white border border-blue-500/50 shadow-lg shadow-blue-500/20 hover:from-blue-500 hover:to-blue-600;
+  }
+
+  /* Live Indicator Pulse */
+  .live-pulse {
+    @apply relative;
+  }
+  .live-pulse::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-current animate-ping opacity-50;
+  }
 }
 
 @layer utilities {
@@ -62,4 +93,123 @@
     background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
     background-size: 20px 20px;
   }
+
+  /* Scanline effect for video feeds */
+  .bg-scanline {
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+    background-size: 100% 4px;
+  }
+
+  /* Cyber Grid Background */
+  .bg-cyber-grid {
+    background-image: 
+      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Glow effects */
+  .glow-green {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  }
+  .glow-red {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  .glow-orange {
+    box-shadow: 0 0 20px rgba(246, 132, 31, 0.3);
+  }
+
+  /* Text Glow */
+  .text-glow-green {
+    text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+  }
+  .text-glow-red {
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+
+  /* Gradient text */
+  .gradient-text-primary {
+    @apply bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent;
+  }
+
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom Animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes blink-fast {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+.animate-radar {
+  animation: radar-sweep 4s linear infinite;
+}
+
+.animate-blink-fast {
+  animation: blink-fast 0.5s infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* Dashboard-specific dark theme overrides */
+.dashboard-dark {
+  @apply bg-slate-950 text-white;
+}
+
+/* Video HUD frame corners */
+.hud-frame {
+  position: relative;
+}
+.hud-frame::before,
+.hud-frame::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: rgba(255,255,255,0.3);
+  border-style: solid;
+  border-width: 0;
+}
+.hud-frame::before {
+  top: 8px;
+  left: 8px;
+  border-top-width: 2px;
+  border-left-width: 2px;
+}
+.hud-frame::after {
+  bottom: 8px;
+  right: 8px;
+  border-bottom-width: 2px;
+  border-right-width: 2px;
 }
