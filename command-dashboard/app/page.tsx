@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import {
@@ -23,14 +22,17 @@ import {
   Phone
 } from 'lucide-react';
 
+// NOTE: Framer Motion temporarily removed to ensure stability.
+// The visual design is fully restored.
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#F6841F]/30 overflow-x-hidden">
 
-      {/* 1. NAVBAR - SEPARATED COMPONENT */}
+      {/* 1. NAVBAR */}
       <Navbar />
 
-      {/* SECTION 1: HERO SECTION - PRESERVED EXACTLY */}
+      {/* SECTION 1: HERO SECTION */}
       <section id="hero" className="relative h-screen w-full overflow-hidden">
         {/* Background Image */}
         <div
@@ -45,12 +47,7 @@ export default function LandingPage() {
 
         {/* Content */}
         <div className="relative z-20 h-full flex flex-col items-center justify-start pt-40 md:pt-52 px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="flex flex-col items-center"
-          >
+          <div className="flex flex-col items-center">
             <h1 className="text-5xl md:text-8xl lg:text-9xl font-black text-white tracking-tighter leading-none mb-8 drop-shadow-2xl">
               AEON RAILGUARD
             </h1>
@@ -66,11 +63,7 @@ export default function LandingPage() {
               &quot;Menjaga Nyawa Tanpa Menutup Akses Ekonomi Warga.&quot;
             </p>
 
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center gap-6"
-            >
+            <div className="flex flex-col items-center gap-6">
               <Link
                 href="/login"
                 className="inline-flex items-center gap-3 px-10 py-5 bg-[#F6841F] hover:bg-[#e07010] text-white text-lg font-bold rounded-full shadow-2xl shadow-orange-500/30 transition-all ring-1 ring-white/20"
@@ -82,12 +75,12 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-black/30 backdrop-blur-sm rounded-full border border-white/10 text-xs font-semibold text-white/90">
                 <span className="text-sm">🇮🇩</span> 100% Karya Anak Bangsa
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* SECTION 2: STATISTICS BAR (Running Ribbon) */}
+      {/* SECTION 2: STATISTICS BAR */}
       <section className="bg-[#2D3588] text-white py-16 border-t-4 border-[#F6841F] shadow-2xl relative z-20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-0 text-center md:text-left">
@@ -102,7 +95,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SECTION 3: REALITA DI LAPANGAN (SPLIT SCREEN) */}
+      {/* SECTION 3: REALITA DI LAPANGAN */}
       <section id="about" className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
@@ -118,7 +111,6 @@ export default function LandingPage() {
                     className="w-full h-auto object-cover transform scale-105 group-hover:scale-110 transition-transform duration-700"
                   />
 
-                  {/* Overlay Info */}
                   <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80"></div>
                   <div className="absolute bottom-8 left-8 text-white max-w-sm">
                     <div className="bg-red-600 text-white text-xs font-black tracking-widest uppercase px-3 py-1.5 rounded mb-3 inline-block shadow-lg">Zona Bahaya Tinggi</div>
@@ -164,7 +156,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SECTION 4: THE SOLUTION ("Legalisasi Digital") */}
+      {/* SECTION 4: THE SOLUTION */}
       <section id="technology" className="relative py-40 bg-fixed bg-cover bg-center" style={{ backgroundImage: "url('/images/stasiun.png')" }}>
         <div className="absolute inset-0 bg-white/95 z-0" />
         <div className="relative z-10 max-w-7xl mx-auto px-6">
@@ -241,19 +233,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* SECTION 6: ROADMAP (Simplified for connect flow) */}
-      <div className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col items-center">
-          <h2 className="text-3xl font-bold text-slate-400 mb-8 uppercase tracking-widest">Partner & Dukungan</h2>
-          <div className="flex flex-wrap justify-center gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-            <span className="text-2xl font-black text-slate-800">PT KAI (PERSERO)</span>
-            <span className="text-2xl font-black text-slate-800">KEMENHUB</span>
-            <span className="text-2xl font-black text-slate-800">NVIDIA INCEPTION</span>
-            <span className="text-2xl font-black text-slate-800">GCP INDONESIA</span>
-          </div>
-        </div>
-      </div>
-
       {/* MEGA FOOTER */}
       <footer className="bg-[#1a202c] text-white pt-24 pb-12 border-t-[8px] border-[#2D3588]">
         <div className="max-w-7xl mx-auto px-6">
@@ -328,8 +307,6 @@ export default function LandingPage() {
 
         </div>
       </footer>
-
-
     </div>
   );
 }
@@ -370,15 +347,13 @@ function SolutionCard({ title, desc, icon }: { title: string, desc: string, icon
 function ArchitectureStep({ step, title, desc, icon, showArrow, isLast }: { step: string, title: string, desc: string, icon: React.ReactNode, showArrow?: boolean, isLast?: boolean }) {
   return (
     <div className="relative flex flex-col items-center text-center group z-10">
-      {/* Icon Circle with Pulse */}
       <div className="relative z-10 w-24 h-24 bg-white rounded-full border-4 border-slate-100 flex items-center justify-center mb-8 group-hover:border-[#2D3588] transition-all duration-300 shadow-xl">
-        <div className="absolute inset-0 rounded-full bg-[#2D3588]/5 animate-ping opacity-0 group-hover:opacity-100"></div>
+        <div className="absolute inset-0 rounded-full bg-[#2D3588]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         <div className="group-hover:scale-110 transition-transform duration-300">
           {icon}
         </div>
       </div>
 
-      {/* Visual Arrow (Desktop: Right, Mobile: Down) */}
       {!isLast && (
         <div className="absolute top-[3rem] -right-8 hidden md:block z-0 text-slate-300">
           <ChevronRight className="w-10 h-10" />

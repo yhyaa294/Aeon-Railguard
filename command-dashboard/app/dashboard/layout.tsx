@@ -15,11 +15,13 @@ import {
   History,
   HardDrive
 } from "lucide-react";
+import { DashboardProvider } from "@/contexts/DashboardContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
+    <DashboardProvider>
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex overflow-hidden">
       
       {/* SIDEBAR - KAI Corporate Style */}
@@ -139,6 +141,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       </div>
     </div>
+    </DashboardProvider>
   );
 }
 
