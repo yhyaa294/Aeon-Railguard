@@ -97,9 +97,13 @@ export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSock
   }, [connect]);
 
   useEffect(() => {
-    connect();
+    // Use microtask to avoid synchronous setState warning
+    const timeoutId = setTimeout(() => {
+      connect();
+    }, 0);
 
     return () => {
+      clearTimeout(timeoutId);
       if (wsRef.current) {
         wsRef.current.close();
       }
