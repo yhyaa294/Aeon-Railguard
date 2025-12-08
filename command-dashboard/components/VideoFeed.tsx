@@ -45,7 +45,7 @@ export default function VideoFeed({ isDanger = false, streamUrl }: VideoFeedProp
         <div className="flex items-center gap-2">
           <Camera size={14} className="text-blue-500" />
           <span className="kai-header text-[10px]">CCTV FEED</span>
-          <span className="text-[10px] font-mono text-slate-500">// CAM-01</span>
+          <span className="text-[10px] font-mono text-slate-500">CAM-01</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">

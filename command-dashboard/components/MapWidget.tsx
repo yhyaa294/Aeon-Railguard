@@ -27,7 +27,7 @@ const Popup = dynamic(
 
 // Fix for default Leaflet icon not showing in Next.js
 const fixLeafletIcon = () => {
-  // @ts-ignore
+  // @ts-expect-error - Leaflet internal property access required for icon fix
   delete L.Icon.Default.prototype._getIconUrl;
 
   L.Icon.Default.mergeOptions({
@@ -47,7 +47,8 @@ export default function MapWidget({ trainDistance = 0, status }: MapWidgetProps)
 
   useEffect(() => {
     fixLeafletIcon();
-    setIsMounted(true);
+    // Using a micro-task to avoid cascading render warning
+    Promise.resolve().then(() => setIsMounted(true));
   }, []);
 
   // Determine marker color/icon based on status

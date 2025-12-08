@@ -14,8 +14,6 @@ import {
   ChevronRight,
   ChevronDown,
   Building,
-  Eye,
-  AlertTriangle,
   MapPin,
   Facebook,
   Twitter,
@@ -24,7 +22,6 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
-import { useState } from 'react';
 
 export default function LandingPage() {
   return (
@@ -66,7 +63,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-blue-50 text-lg md:text-2xl font-light tracking-wide mb-16 drop-shadow-md max-w-4xl italic leading-relaxed">
-              "Menjaga Nyawa Tanpa Menutup Akses Ekonomi Warga."
+              &quot;Menjaga Nyawa Tanpa Menutup Akses Ekonomi Warga.&quot;
             </p>
 
             <motion.div
@@ -129,7 +126,7 @@ export default function LandingPage() {
                       <MapPin className="w-4 h-4 text-[#F6841F]" /> JOMBANG, JAWA TIMUR
                     </div>
                     <p className="text-sm font-light opacity-90 leading-relaxed italic border-l-2 border-[#F6841F] pl-3">
-                      "Tanpa palang, tanpa sinyal, namun menjadi akses vital ribuan warga setiap hari."
+                      &quot;Tanpa palang, tanpa sinyal, namun menjadi akses vital ribuan warga setiap hari.&quot;
                     </p>
                   </div>
                 </div>
@@ -156,7 +153,7 @@ export default function LandingPage() {
                   <div>
                     <h4 className="font-bold text-[#2D3588] text-lg mb-2">Dilema Klasik</h4>
                     <p className="text-slate-700 font-medium italic leading-relaxed">
-                      "Menutupnya berarti mematikan ekonomi, membiarkannya berarti mempertaruhkan nyawa. Aeon hadir sebagai jalan tengah yang manusiawi."
+                      &quot;Menutupnya berarti mematikan ekonomi, membiarkannya berarti mempertaruhkan nyawa. Aeon hadir sebagai jalan tengah yang manusiawi.&quot;
                     </p>
                   </div>
                 </div>
@@ -174,7 +171,7 @@ export default function LandingPage() {
 
           <div className="text-center mb-20">
             <SectionTag>SOLUSI KAMI</SectionTag>
-            <h2 className="text-4xl md:text-6xl font-black text-[#2D3588] mb-6">Mengubah 'Ilegal' Menjadi <span className="text-[#F6841F]">'Smart Crossing'</span></h2>
+            <h2 className="text-4xl md:text-6xl font-black text-[#2D3588] mb-6">Mengubah &apos;Ilegal&apos; Menjadi <span className="text-[#F6841F]">&apos;Smart Crossing&apos;</span></h2>
             <p className="text-xl text-slate-500 max-w-3xl mx-auto">Teknologi yang memungkinkan koeksistensi antara kecepatan kereta api dan mobilitas warga lokal.</p>
           </div>
 

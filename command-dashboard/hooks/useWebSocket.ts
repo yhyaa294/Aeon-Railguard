@@ -33,6 +33,7 @@ export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSock
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectRef = useRef<() => void>(() => {});
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -52,8 +53,8 @@ export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSock
         try {
           const data: SystemState = JSON.parse(event.data);
           setState(data);
-        } catch (e) {
-          console.error("[WS] Parse error:", e);
+        } catch {
+          console.error("[WS] Parse error");
         }
       };
 
@@ -62,9 +63,9 @@ export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSock
         setIsConnected(false);
         wsRef.current = null;
 
-        // Auto-reconnect after 3 seconds
+        // Auto-reconnect after 3 seconds using ref to avoid circular dependency
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
+          connectRef.current();
         }, 3000);
       };
 
@@ -74,11 +75,16 @@ export function useWebSocket(url: string = "ws://localhost:8080/ws"): UseWebSock
       };
 
       wsRef.current = ws;
-    } catch (e) {
+    } catch {
       setError("Failed to connect");
-      reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      reconnectTimeoutRef.current = setTimeout(() => connectRef.current(), 3000);
     }
   }, [url]);
+
+  // Keep ref in sync with latest connect function
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   const reconnect = useCallback(() => {
     if (wsRef.current) {
