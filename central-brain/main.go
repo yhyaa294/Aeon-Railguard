@@ -96,6 +96,16 @@ const (
 	DISTANCE_CRITICAL = 0.5
 )
 
+// IncidentLog represents a logged incident for history
+type IncidentLog struct {
+	ID        string `json:"id"`
+	Type      string `json:"type"`
+	Location  string `json:"location"`
+	Message   string `json:"message"`
+	Severity  string `json:"severity"`
+	Timestamp string `json:"timestamp"`
+}
+
 var (
 	// Current system state
 	state = SystemState{
@@ -135,6 +145,14 @@ var (
 		LastUpdate:      time.Now().Format("15:04:05"),
 	}
 	cityStatusMutex sync.RWMutex
+
+	// --- DEMO GOD MODE ---
+	demoModeActive = false
+	demoModeMutex  sync.RWMutex
+
+	// Incident History Log
+	incidentHistory      = []IncidentLog{}
+	incidentHistoryMutex sync.RWMutex
 )
 
 func init() {
