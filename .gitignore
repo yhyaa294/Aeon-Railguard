@@ -1,14 +1,24 @@
 # ============================================
 # AEON RAILGUARD - GITIGNORE
-# Private Repo - Push everything except videos
+# Push ONLY Source Code - Exclude all media
 # ============================================
 
-# --- VIDEO FILES ONLY ---
+# --- VIDEO FILES ---
 *.mp4
 *.avi
 *.mov
 *.mkv
 *.webm
+
+# --- IMAGE FILES ---
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.bmp
+*.heic
+*.tiff
+*.gif
 
 # --- DEPENDENCIES ---
 node_modules/
