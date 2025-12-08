@@ -33,6 +33,7 @@ const config: Config = {
         'radar': 'radar 2s linear infinite',
         'progress-indeterminate': 'progressIndeterminate 1.5s infinite linear',
         'fade-in-up': 'fadeInUp 1s ease-out forwards',
+        'scan-vertical': 'scanVertical 3s linear infinite',
       },
       keyframes: {
         fadeInUp: {
@@ -50,6 +51,10 @@ const config: Config = {
         progressIndeterminate: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(300%)' },
+        },
+        scanVertical: {
+          '0%, 100%': { top: '0%' },
+          '50%': { top: '100%' },
         }
       },
       boxShadow: {

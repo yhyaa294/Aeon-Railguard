@@ -29,15 +29,15 @@ export default function LandingPage() {
         {/* Layer 0: Background Station (Real Photo) */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/images/stasiun.png"
+            src="/images/gambar%20kereta%20landing%20page%20hal%201.png"
             alt="Background Stasiun"
             fill
             className="object-cover"
             priority
           />
           {/* Heavy Dark Gradient for Text Readability */}
-          <div className="absolute inset-0 bg-slate-900/80 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-transparent to-slate-900/90" />
+          <div className="absolute inset-0 bg-slate-900/60 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-transparent to-slate-900/80" />
         </div>
 
         {/* Layer 1: Content (Centered & Top-Heavy) */}
@@ -73,18 +73,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Layer 2: Foreground Train (3D Depth Effect) */}
-        <div className="absolute bottom-0 left-0 w-full z-10 pointer-events-none">
-          <div className="relative w-full h-[50vh] md:h-[65vh] lg:h-[75vh]">
-            <Image
-              src="/images/kereta transparan ke kanan.png"
-              alt="Train Foreground"
-              fill
-              className="object-contain object-bottom"
-              priority
-            />
-          </div>
-        </div>
+        {/* Layer 2: Foreground Train (REMOVED: The background image already contains the train) */}
+        {/* <div className="absolute bottom-0 left-0 w-full z-10 pointer-events-none">...</div> */}
       </section>
 
       {/* =========================================
