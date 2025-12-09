@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Hero](command-dashboard/public/images/logo%20Aeon.png)
+![Hero](command-dashboard/public/images/logo%5Aeon.png)
 
 # 🚆 Aeon RailGuard: Integrated Smart City Railway Safety System
 
