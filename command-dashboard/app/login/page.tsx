@@ -3,15 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, MapPin, Lock, Shield, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
+import { User, Mail, MapPin, Lock, Shield, ArrowRight, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
 
 export default function CinematicLoginPage() {
   const router = useRouter();
-  
+
   // Video intro state
   const [showIntro, setShowIntro] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+
   // Form state
   const [namaLengkap, setNamaLengkap] = useState('');
   const [email, setEmail] = useState('');
@@ -19,14 +19,15 @@ export default function CinematicLoginPage() {
   const [password, setPassword] = useState('');
   const [kodeOtoritas, setKodeOtoritas] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [errorMsg, setErrorMsg] = useState('');
+
   // Detect DAOP from station ID
-  const detectedDaop = idStasiun.toUpperCase().startsWith('JBG') ? 'DAOP 7 MADIUN' : 
-                       idStasiun.toUpperCase().startsWith('SMT') ? 'DAOP 4 SEMARANG' :
-                       idStasiun.toUpperCase().startsWith('SBI') ? 'DAOP 8 SURABAYA' :
-                       idStasiun.toUpperCase().startsWith('BD') ? 'DAOP 2 BANDUNG' :
-                       idStasiun.toUpperCase().startsWith('YK') ? 'DAOP 6 YOGYAKARTA' :
-                       null;
+  const detectedDaop = idStasiun.toUpperCase().startsWith('JBG') ? 'DAOP 7 MADIUN' :
+    idStasiun.toUpperCase().startsWith('SMT') ? 'DAOP 4 SEMARANG' :
+      idStasiun.toUpperCase().startsWith('SBI') ? 'DAOP 8 SURABAYA' :
+        idStasiun.toUpperCase().startsWith('BD') ? 'DAOP 2 BANDUNG' :
+          idStasiun.toUpperCase().startsWith('YK') ? 'DAOP 6 YOGYAKARTA' :
+            null;
 
   // Handle video end or error - skip intro
   const handleVideoEnd = () => {
@@ -47,20 +48,33 @@ export default function CinematicLoginPage() {
     return () => clearTimeout(timeout);
   }, [showIntro]);
 
-  // Handle form submission
+  // Handle form submission (Demo Mode - No real authentication)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
     setIsLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    
+
+    // Simulate loading for demo effect
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Demo mode: Accept any credentials
     console.log('Login attempt:', { namaLengkap, email, idStasiun, kodeOtoritas });
+    
+    // Store user info in localStorage for demo
+    localStorage.setItem('aeon_user', JSON.stringify({
+      nama: namaLengkap,
+      email: email,
+      stasiun: idStasiun,
+      daop: detectedDaop || 'DAOP 7 MADIUN'
+    }));
+
+    setIsLoading(false);
     router.push('/dashboard');
   };
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
-      
+
       {/* === VIDEO INTRO OVERLAY === */}
       <AnimatePresence>
         {showIntro && (
@@ -83,9 +97,9 @@ export default function CinematicLoginPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            
+
             {/* Loading Text Below Video */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
@@ -93,16 +107,16 @@ export default function CinematicLoginPage() {
             >
               <h2 className="text-2xl font-bold text-white mb-2">AEON RAILGUARD</h2>
               <p className="text-slate-400 text-sm mb-4">Sistem Keamanan Perlintasan Kereta Api</p>
-              
+
               {/* Loading Progress */}
               <div className="flex items-center justify-center gap-3 text-[#F6841F]">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span className="text-sm font-medium">Memuat Sistem...</span>
               </div>
-              
+
               {/* Loading Bar */}
               <div className="mt-4 w-64 h-1 bg-slate-800 rounded-full overflow-hidden mx-auto">
-                <motion.div 
+                <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 8, ease: 'linear' }}
@@ -118,7 +132,7 @@ export default function CinematicLoginPage() {
             >
               Skip Intro →
             </button>
-            
+
             {/* Version Badge */}
             <div className="absolute bottom-8 left-8 text-xs text-slate-500 font-mono">
               v2.0.0 | Command Center
@@ -136,18 +150,18 @@ export default function CinematicLoginPage() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="flex min-h-screen w-full"
           >
-            
+
             {/* LEFT SIDE: Station Image */}
             <div className="hidden lg:flex w-1/2 relative overflow-hidden">
               {/* Background Image */}
-              <img 
-                src="/images/stasiun.png" 
-                alt="Station Background" 
+              <img
+                src="/images/stasiun.png"
+                alt="Station Background"
                 className="w-full h-full object-cover"
               />
               {/* Dark Overlay */}
               <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-slate-900/40" />
-              
+
               {/* Branding Content */}
               <div className="absolute inset-0 flex flex-col justify-end p-12">
                 <motion.div
@@ -172,29 +186,39 @@ export default function CinematicLoginPage() {
             {/* RIGHT SIDE: Login Form */}
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 bg-white">
               <div className="w-full max-w-md space-y-8">
-                
+
                 {/* Header: Logos */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="flex items-center justify-center gap-4"
+                  className="flex flex-col items-center justify-center gap-4"
                 >
-                  <img
-                    src="/images/logo%20Aeon.png"
-                    alt="Aeon Logo"
-                    className="h-10 w-auto object-contain"
-                  />
-                  <div className="h-8 w-px bg-slate-300" />
-                  <img
-                    src="/images/logo%20kai.jpg"
-                    alt="KAI Logo"
-                    className="h-10 w-auto object-contain mix-blend-multiply"
-                  />
+                  <div className="flex items-center gap-4">
+                    <img
+                      src="/images/logo%20Aeon.png"
+                      alt="Aeon Logo"
+                      className="h-10 w-auto object-contain"
+                    />
+                    <div className="h-8 w-px bg-slate-300" />
+                    <img
+                      src="/images/logo%20kai.jpg"
+                      alt="KAI Logo"
+                      className="h-10 w-auto object-contain mix-blend-multiply"
+                    />
+                  </div>
+
+                  {/* ERROR MESSAGE */}
+                  {errorMsg && (
+                    <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm font-bold border border-red-200">
+                      <AlertCircle className="w-4 h-4" />
+                      {errorMsg}
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Title */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
@@ -205,11 +229,11 @@ export default function CinematicLoginPage() {
                 </motion.div>
 
                 {/* Form */}
-                <motion.form 
+                <motion.form
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
-                  onSubmit={handleLogin} 
+                  onSubmit={handleLogin}
                   className="space-y-5"
                 >
                   {/* Nama Lengkap */}
@@ -332,7 +356,7 @@ export default function CinematicLoginPage() {
                 </motion.form>
 
                 {/* Footer Security Badge */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1 }}
@@ -349,7 +373,7 @@ export default function CinematicLoginPage() {
 
               </div>
             </div>
-            
+
           </motion.div>
         )}
       </AnimatePresence>

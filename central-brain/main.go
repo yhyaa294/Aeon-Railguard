@@ -75,6 +75,22 @@ type IncidentPayload struct {
 	InROI       bool    `json:"in_roi"`
 }
 
+// LoginPayload
+type LoginPayload struct {
+	ID       string `json:"id"`
+	Password string `json:"password"`
+}
+
+// LoginResponse
+type LoginResponse struct {
+	Token   string   `json:"token"`
+	Role    string   `json:"role"`
+	Name    string   `json:"name"`
+	Station *Station `json:"station,omitempty"`
+	Post    *Post    `json:"post,omitempty"`
+	Region  *Region  `json:"region,omitempty"`
+}
+
 // --- SMART CITY STATE MACHINE ---
 
 // CityStatus represents the Smart City response state
@@ -248,6 +264,7 @@ func main() {
 	// Routes
 	app.Get("/", handleRoot)
 	app.Get("/api/status", handleGetStatus)
+	app.Post("/api/login", handleLogin)
 	app.Get("/api/hierarchy", handleGetHierarchy)
 	app.Get("/api/city-status", handleGetCityStatus)
 	app.Get("/api/incidents", handleGetIncidentHistory)
@@ -406,6 +423,70 @@ func handleGetHierarchy(c *fiber.Ctx) error {
 	}
 }
 
+func handleLogin(c *fiber.Ctx) error {
+	var payload LoginPayload
+	if err := c.BodyParser(&payload); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
+	}
+
+	// SUPER SIMPLE AUTH LOGIC (MOCK DB)
+	// Password for everyone is "123456" for simplicity in this demo
+	if payload.Password != "123456" {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid password"})
+	}
+
+	// 1. Check DAOP
+	if payload.ID == regionData.ID || payload.ID == "DAOP-7" {
+		return c.JSON(LoginResponse{
+			Token:  "mock-token-daop",
+			Role:   "DAOP_ADMIN",
+			Name:   "Admin DAOP 7",
+			Region: &regionData,
+		})
+	}
+
+	// 2. Check Stations
+	for _, station := range regionData.Stations {
+		// Check both ID and Code for flexibility
+		if station.ID == payload.ID || station.Name == payload.ID {
+			return c.JSON(LoginResponse{
+				Token:   "mock-token-station",
+				Role:    "STATION_MASTER",
+				Name:    "Kepala " + station.Name,
+				Station: &station,
+			})
+		}
+
+		// 3. Check Posts within Station
+		for _, post := range station.Posts {
+			if post.ID == payload.ID {
+				return c.JSON(LoginResponse{
+					Token: "mock-token-post",
+					Role:  "JPL_OFFICER",
+					Name:  "Petugas " + post.Name,
+					Post:  &post,
+				})
+			}
+		}
+	}
+
+	// 4. Fallback for hardcoded "JBG-001" mapping to Stasiun Jombang if not found above
+	if payload.ID == "JBG-001" {
+		for _, s := range regionData.Stations {
+			if s.ID == "STA-JBG" {
+				return c.JSON(LoginResponse{
+					Token:   "mock-token-jbg",
+					Role:    "STATION_MASTER",
+					Name:    "Kepala Stasiun Jombang",
+					Station: &s,
+				})
+			}
+		}
+	}
+
+	return c.Status(404).JSON(fiber.Map{"error": "User ID not found"})
+}
+
 func handleIncident(c *fiber.Ctx) error {
 	var payload IncidentPayload
 	if err := c.BodyParser(&payload); err != nil {
@@ -517,7 +598,7 @@ func handleDemoTrigger(c *fiber.Ctx) error {
 	// Auto-reset after 30 seconds
 	go func() {
 		time.Sleep(30 * time.Second)
-		
+
 		demoModeMutex.Lock()
 		demoModeActive = false
 		demoModeMutex.Unlock()
