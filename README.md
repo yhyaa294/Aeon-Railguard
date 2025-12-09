@@ -1,19 +1,19 @@
+# Aeon-Railguard
+
+<div align="center">
+
+![Hero](command-dashboard/public/images/logo%20Aeon.png)
+
 # 🚆 Aeon RailGuard: Integrated Smart City Railway Safety System
 
-<p align="center">
-  <img src="https://img.shields.io/badge/🏆_Ekraf_Tech_Summit-2025-gold?style=for-the-badge" alt="Ekraf Tech Summit 2025"/>
-  <img src="https://img.shields.io/badge/🇮🇩_Made_in-Jombang-red?style=for-the-badge" alt="Made in Jombang"/>
-  <img src="https://img.shields.io/badge/🤖_AI-Powered-blue?style=for-the-badge" alt="AI Powered"/>
-</p>
+**Ekraf Tech Summit 2025** | **Made in Jombang** | **AI Powered**
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat-square&logo=go" alt="Go"/>
-  <img src="https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python" alt="Python"/>
-  <img src="https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/YOLOv8-Ultralytics-FF6F00?style=flat-square" alt="YOLOv8"/>
-</p>
+[![Go](https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat-square&logo=go)](https://go.dev/)
+[![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-blue?style=flat-square)](https://ultralytics.com/)
 
----
+</div>
 
 ## 📋 Overview
 
@@ -28,9 +28,9 @@ Di Indonesia, terdapat ribuan perlintasan kereta api ilegal yang dibangun masyar
 ## ✨ Key Features
 
 | Module | Feature | Description |
-|--------|---------|-------------|
-| 👁️ | **The Eye** | Real-time Object Detection using YOLOv8 with **50ms latency** |
-| 🧠 | **The Brain** | Central Simulation Core calculating **Time-to-Collision (TTC)** |
+| :--- | :--- | :--- |
+| 👁️ | **The Eye** | Real-time Object Detection using YOLOv8 with 50ms latency |
+| 🧠 | **The Brain** | Central Simulation Core calculating Time-to-Collision (TTC) |
 | 🏙️ | **City Grid** | Auto-dispatch Ambulance & Traffic Light Override integration |
 | 👮 | **Multi-Tier Access** | Role-based dashboards for JPL Officers, Station Masters, and DAOP Command |
 | 📡 | **Live WebSocket** | Real-time status broadcasting to all connected clients |
@@ -40,47 +40,42 @@ Di Indonesia, terdapat ribuan perlintasan kereta api ilegal yang dibangun masyar
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     DAOP 7 MADIUN (Command Level)               │
-│  ┌─────────────────────────┐  ┌─────────────────────────────┐   │
-│  │   Stasiun Jombang       │  │   Stasiun Mojoagung         │   │
-│  │  ┌─────┐┌─────┐┌─────┐  │  │  ┌─────┐┌─────┐             │   │
-│  │  │JPL  ││JPL  ││JPL  │  │  │  │JPL  ││JPL  │             │   │
-│  │  │102  ││105  ││110  │  │  │  │201  ││205  │             │   │
-│  │  └──┬──┘└──┬──┘└──┬──┘  │  │  └──┬──┘└──┬──┘             │   │
-│  │     │      │      │     │  │     │      │                │   │
-│  │  [CAM]  [CAM]  [CAM]    │  │  [CAM]  [CAM]               │   │
-│  └─────────────────────────┘  └─────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-              ┌───────────────────────────────┐
-              │   🧠 CENTRAL BRAIN (Go/Fiber) │
-              │   WebSocket + REST API        │
-              │   Port: 8080                  │
-              └───────────────────────────────┘
-                     │              │
-          ┌──────────┘              └──────────┐
-          ▼                                    ▼
-┌─────────────────────┐              ┌─────────────────────┐
-│  👁️ AI ENGINE       │              │  💻 DASHBOARD       │
-│  Python + YOLOv8    │              │  Next.js 14         │
-│  Object Detection   │              │  KAI Enterprise UI  │
-└─────────────────────┘              └─────────────────────┘
+```mermaid
+graph TD
+    subgraph DAOP["DAOP 7 MADIUN (Command Level)"]
+        subgraph ST1["Stasiun Jombang"]
+            JPL102[JPL 102]
+            JPL105[JPL 105]
+            JPL110[JPL 110]
+        end
+        subgraph ST2["Stasiun Mojoagung"]
+            JPL201[JPL 201]
+            JPL205[JPL 205]
+        end
+    end
+
+    ST1 --> BRAIN
+    ST2 --> BRAIN
+
+    subgraph CORE["System Core"]
+        BRAIN["🧠 CENTRAL BRAIN (Go/Fiber)<br>Port: 8080"]
+        AI["👁️ AI ENGINE<br>(Python + YOLOv8)"]
+        DASH["💻 DASHBOARD<br>(Next.js 14)"]
+    end
+
+    BRAIN <--> AI
+    BRAIN <--> DASH
 ```
 
----
-
-## 🔐 Multi-Tier Access Control
+### 🔐 Multi-Tier Access Control
 
 Sistem menggunakan **Role-Based Access Control (RBAC)** dengan 3 level:
 
 | Level | Role | Akses | Endpoint |
-|-------|------|-------|----------|
-| 1 | **JPL Operator** | Hanya 2-4 kamera di pos mereka | `/api/hierarchy?role=jpl` |
-| 2 | **Station Master** | Semua JPL di bawah stasiun | `/api/hierarchy?role=station` |
-| 3 | **DAOP Command** | Seluruh region + Global Map | `/api/hierarchy?role=daop` |
+| :--- | :--- | :--- | :--- |
+| **1** | **JPL Operator** | Hanya 2-4 kamera di pos mereka | `/api/hierarchy?role=jpl` |
+| **2** | **Station Master** | Semua JPL di bawah stasiun | `/api/hierarchy?role=station` |
+| **3** | **DAOP Command** | Seluruh region + Global Map | `/api/hierarchy?role=daop` |
 
 ---
 
@@ -110,43 +105,32 @@ Sistem menggunakan **Role-Based Access Control (RBAC)** dengan 3 level:
 ## 🚀 How to Run (Instructions for Judges)
 
 ### Prerequisites
-```bash
-# Required installations
 - Go 1.20+
 - Python 3.9+ with pip
 - Node.js 18+ with npm
-```
 
 ### Step 1: Start The Brain 🧠
 ```bash
 cd central-brain
 go run main.go
-
-# Output:
-# ╔══════════════════════════════════════════════════════════╗
-# ║     AEON RAILGUARD - CENTRAL BRAIN v2.0                  ║
-# ║     Multi-Tier Access Control System                     ║
-# ╚══════════════════════════════════════════════════════════╝
-# Server running on http://localhost:8080
 ```
+*Output: Server running on http://localhost:8080*
 
 ### Step 2: Launch The Eye 👁️
 ```bash
 cd ai-engine
 pip install -r requirements.txt
 python app.py
-
-# AI Detection active on port 5000
 ```
+*AI Detection active on port 5000*
 
 ### Step 3: Open The Dashboard 💻
 ```bash
 cd command-dashboard
 npm install
 npm run dev
-
-# Dashboard live at http://localhost:3000
 ```
+*Dashboard live at http://localhost:3000*
 
 ### Step 4: Test the API
 ```bash
@@ -190,20 +174,20 @@ Aeon-Railguard/
 ## 🎯 Demo Scenarios
 
 ### Scenario 1: Normal Monitoring
-- Semua kamera ONLINE (hijau)
-- Train distance > 3km = STATUS SAFE
-- City Action: MONITORING
+- Semua kamera **ONLINE** (hijau)
+- Train distance > 3km = **STATUS SAFE**
+- City Action: **MONITORING**
 
 ### Scenario 2: Warning State
 - Train approaching < 3km
-- Dashboard turns YELLOW
-- City Action: TRAFFIC CAUTION ACTIVATED
+- Dashboard turns **YELLOW**
+- City Action: **TRAFFIC CAUTION ACTIVATED**
 
 ### Scenario 3: Critical Emergency
 - Object detected in ROI + Train < 1km
-- Dashboard turns RED with alarm
-- City Action: DISPATCHING POLICE & AMBULANCE
-- Traffic lights override to RED
+- Dashboard turns **RED** with alarm
+- City Action: **DISPATCHING POLICE & AMBULANCE**
+- Traffic lights override to **RED**
 
 ---
 
@@ -212,31 +196,21 @@ Aeon-Railguard/
 Karena keterbatasan GitHub (max 100MB/file), dataset dan media disimpan di Google Drive:
 
 | Resource | Link | Keterangan |
-|----------|------|------------|
-| 📽️ **Video Training** | [Google Drive](https://drive.google.com/drive/folders/1ORK_rs61H6-Bvjnoo3fjQgpnP0WlgIPf?usp=sharing) | Video perlintasan kereta untuk demo AI |
-| 📸 **Dataset Gambar** | [Google Drive](https://drive.google.com/drive/folders/1ORK_rs61H6-Bvjnoo3fjQgpnP0WlgIPf?usp=sharing) | Sorted training images (motor, mobil, orang, kereta) |
-| 🎨 **Presentasi** | [Canva](https://www.canva.com/design/DAG6zLVFxrs/oU-DA0C1e9cb53sBO8eTug/edit) | Slide presentasi project |
-
-### Setup Dataset:
-```bash
-# Download dari Google Drive, lalu extract ke:
-ai-engine/datasets/sorted_data/
-ai-engine/datasets/videos/
-```
+| :--- | :--- | :--- |
+| **📽️ Video Training** | [Google Drive](#) | Video perlintasan kereta untuk demo AI |
+| **📸 Dataset Gambar** | [Google Drive](#) | Sorted training images (motor, mobil, orang, kereta) |
+| **🎨 Presentasi** | [Canva](#) | Slide presentasi project |
 
 ---
 
 ## 🏆 Team
 
-<p align="center">
-  <strong>Developed with Pride by</strong><br/>
-  <h2 align="center">🚀 Team GenZ AI Jombang 🚀</h2>
-</p>
+**Developed with Pride by**
 
-<p align="center">
-  <em>Dikembangkan dengan Bangga di Jombang, Indonesia</em><br/>
-  <strong>Ekraf Tech Summit 2025</strong>
-</p>
+### 🚀 Team GenZ AI Jombang 🚀
+*Dikembangkan dengan Bangga di Jombang, Indonesia*
+
+**Ekraf Tech Summit 2025**
 
 ---
 
@@ -244,9 +218,5 @@ ai-engine/datasets/videos/
 
 This project is built for **Ekraf Tech Summit 2025** competition.
 
----
-
-<p align="center">
-  <strong>🇮🇩 100% Karya Anak Bangsa 🇮🇩</strong><br/>
-  <em>Solving Real Problems with Real Technology</em>
-</p>
+🇮🇩 **100% Karya Anak Bangsa** 🇮🇩
+*Solving Real Problems with Real Technology*
