@@ -59,7 +59,7 @@ export default function CinematicLoginPage() {
 
     // Demo mode: Accept any credentials
     console.log('Login attempt:', { namaLengkap, email, idStasiun, kodeOtoritas });
-    
+
     // Store user info in localStorage for demo
     localStorage.setItem('aeon_user', JSON.stringify({
       nama: namaLengkap,
@@ -75,26 +75,26 @@ export default function CinematicLoginPage() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
 
-      {/* === VIDEO INTRO OVERLAY === */}
+      {/* === VIDEO INTRO OVERLAY (WHITE BACKGROUND) === */}
       <AnimatePresence>
         {showIntro && (
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1, ease: 'easeInOut' }}
-            className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center"
+            className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center"
           >
-            {/* Video Container */}
-            <div className="relative w-full max-w-md aspect-square flex items-center justify-center">
+            {/* Video Container with Shadow Frame */}
+            <div className="relative bg-white rounded-2xl shadow-2xl p-4 border border-slate-200">
               <video
                 ref={videoRef}
-                src="/videos/video%20logo.mp4"
+                src="/videos/logo-loading.mp4"
                 autoPlay
                 muted
                 playsInline
                 onEnded={handleVideoEnd}
                 onError={handleVideoError}
-                className="w-full h-full object-contain"
+                className="w-80 h-auto object-contain rounded-lg"
               />
             </div>
 
@@ -103,40 +103,38 @@ export default function CinematicLoginPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="mt-8 text-center"
+              className="mt-8 text-center w-80"
             >
-              <h2 className="text-2xl font-bold text-white mb-2">AEON RAILGUARD</h2>
-              <p className="text-slate-400 text-sm mb-4">Sistem Keamanan Perlintasan Kereta Api</p>
+              <h2 className="text-2xl font-bold text-[#2D2A70] mb-2">AEON RAILGUARD</h2>
+              <p className="text-slate-500 text-sm mb-4">Sistem Keamanan Perlintasan Kereta Api</p>
 
               {/* Loading Progress */}
-              <div className="flex items-center justify-center gap-3 text-[#F6841F]">
+              <div className="flex items-center justify-center gap-3 text-[#DA5525] mb-4">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span className="text-sm font-medium">Memuat Sistem...</span>
               </div>
 
-              {/* Loading Bar */}
-              <div className="mt-4 w-64 h-1 bg-slate-800 rounded-full overflow-hidden mx-auto">
+              {/* Loading Bar - Animated 0% to 100% */}
+              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                 <motion.div
-                  initial={{ width: 0 }}
+                  initial={{ width: '0%' }}
                   animate={{ width: '100%' }}
-                  transition={{ duration: 8, ease: 'linear' }}
-                  className="h-full bg-gradient-to-r from-[#2D3588] to-[#F6841F] rounded-full"
+                  transition={{ duration: 5, ease: 'linear' }}
+                  className="h-full bg-gradient-to-r from-[#DA5525] to-orange-400 rounded-full"
                 />
               </div>
+
+              {/* Version */}
+              <p className="text-slate-400 text-xs mt-4 font-mono">v2.0.0 | Command Center</p>
             </motion.div>
 
             {/* Skip Button */}
             <button
               onClick={handleVideoEnd}
-              className="absolute bottom-8 right-8 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg backdrop-blur-sm transition-all border border-white/20"
+              className="absolute bottom-8 right-8 px-4 py-2 bg-[#2D2A70] hover:bg-[#3d3a80] text-white text-sm font-medium rounded-lg transition-all shadow-lg"
             >
               Skip Intro →
             </button>
-
-            {/* Version Badge */}
-            <div className="absolute bottom-8 left-8 text-xs text-slate-500 font-mono">
-              v2.0.0 | Command Center
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
