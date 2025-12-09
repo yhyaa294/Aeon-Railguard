@@ -2,9 +2,10 @@
 """
 AEON RAILGUARD - AI ENGINE (PHASE 3: ADVANCED LOGIC)
 Features:
-- YOLOv8 Object Tracking
+- YOLOv8 Object Tracking (ByteTrack)
 - Polygon ROI Filtering
 - Time Persistence Check (> 3.0s) to reduce False Positives
+- Evidence capture & alert dispatch
 """
 
 import cv2
@@ -12,12 +13,17 @@ import numpy as np
 import time
 import argparse
 import requests
+import os
+import json
+from datetime import datetime
 from ultralytics import YOLO
 
 # --- CONFIGURATION ---
 BRAIN_URL = "http://localhost:8080/api/incident"
 ALERT_THRESHOLD_SECONDS = 3.0
 CONFIDENCE_THRESHOLD = 0.45
+# Default ByteTrack config bundled with ultralytics
+DEFAULT_TRACKER = "bytetrack.yaml"
 
 # ---------------------------------------------------------
 # ⚠️ REPLACE THESE COORDINATES WITH YOUR CUSTOM ZONE ⚠️
@@ -27,10 +33,22 @@ DANGER_ZONE = [(350, 200), (850, 200), (1000, 600), (200, 600)]
 # ---------------------------------------------------------
 
 class AIEngine:
-    def __init__(self, source: str, model_path: str = "yolov8n.pt"):
+    def __init__(
+        self,
+        source: str,
+        model_path: str = "yolov8n.pt",
+        zone_path: str = "danger_zone.json",
+        evidence_dir: str = "evidence",
+        tracker_config: str | None = DEFAULT_TRACKER,
+    ):
         self.source = source
         print(f"[INIT] Loading YOLO model: {model_path}")
         self.model = YOLO(model_path)
+        self.tracker_config = tracker_config
+        self.zone_path = zone_path
+        self.evidence_dir = evidence_dir
+        os.makedirs(self.evidence_dir, exist_ok=True)
+        self.zone = self._load_zone(zone_path)
         
         # State tracking
         # Dictionary: {track_id: start_time_in_zone}
@@ -42,7 +60,23 @@ class AIEngine:
         # Danger classes (COCO indices)
         # 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
         self.danger_classes = [0, 1, 2, 3, 5, 7]
-        self.class_names = {0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 5: 'bus', 7: 'truck'}
+        # Use model-provided names for accuracy
+        self.class_names = self.model.names if hasattr(self.model, "names") else {}
+
+    def _load_zone(self, zone_path: str):
+        """Load polygon from json if available, otherwise fallback to default constant."""
+        if zone_path and os.path.isfile(zone_path):
+            try:
+                with open(zone_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                # Expect list of [x, y]
+                zone = [(int(p[0]), int(p[1])) for p in data]
+                print(f"[ZONE] Loaded {len(zone)} points from {zone_path}")
+                return zone
+            except Exception as e:
+                print(f"[ZONE] Failed to load {zone_path}, using default. Error: {e}")
+        print("[ZONE] Using default hardcoded danger zone.")
+        return DANGER_ZONE
 
     def is_point_in_polygon(self, point, polygon):
         """
@@ -53,7 +87,28 @@ class AIEngine:
         result = cv2.pointPolygonTest(np.array(polygon, dtype=np.int32), point, False)
         return result >= 0
 
-    def send_alert(self, obj_id, class_name, confidence):
+    def save_evidence(self, frame, bbox, obj_id, class_name, confidence, duration):
+        """Save annotated frame to evidence directory."""
+        x1, y1, x2, y2 = bbox
+        annotated = frame.copy()
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.putText(
+            annotated,
+            f"{class_name} {confidence:.2f} {duration:.1f}s",
+            (x1, max(20, y1 - 10)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 0, 255),
+            2,
+        )
+
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{ts}_id{obj_id}_{class_name}.jpg"
+        path = os.path.join(self.evidence_dir, filename)
+        cv2.imwrite(path, annotated)
+        print(f"[EVIDENCE] Saved to {path}")
+
+    def send_alert(self, obj_id, class_name, confidence, duration, frame, bbox):
         """Send HTTP POST alert to Central Brain."""
         # Check cooldown (avoid spamming same alert every frame)
         current_time = time.time()
@@ -68,19 +123,27 @@ class AIEngine:
             "type": "OBSTACLE_STUCK",
             "object_class": class_name,
             "confidence": float(confidence),
-            "in_roi": True
+            "in_roi": True,
+            "object_id": int(obj_id),
+            "duration_seconds": float(duration),
         }
         
+        # Save evidence regardless of network status
+        self.save_evidence(frame, bbox, obj_id, class_name, confidence, duration)
+        self.alert_cooldowns[obj_id] = current_time
+
         try:
             requests.post(BRAIN_URL, json=payload, timeout=2)
-            self.alert_cooldowns[obj_id] = current_time
         except Exception as e:
             print(f"[ERROR] Failed to send alert: {e}")
 
     def run(self):
         print(f"[RUN] Starting AI Engine on source: {self.source}")
         print(f"[INFO] Alert Threshold: {ALERT_THRESHOLD_SECONDS} seconds")
-        
+        print(f"[INFO] Tracker: {self.tracker_config or 'default'}")
+        print(f"[INFO] Zone file: {self.zone_path}")
+        print(f"[INFO] Evidence dir: {self.evidence_dir}")
+
         # Open video source (handle int for webcam)
         src = int(self.source) if self.source.isdigit() else self.source
         cap = cv2.VideoCapture(src)
@@ -101,7 +164,14 @@ class AIEngine:
 
             # 1. Run YOLO Tracking
             # persist=True is crucial for ID tracking across frames
-            results = self.model.track(frame, persist=True, verbose=False, conf=CONFIDENCE_THRESHOLD, classes=self.danger_classes)
+            results = self.model.track(
+                frame,
+                persist=True,
+                verbose=False,
+                conf=CONFIDENCE_THRESHOLD,
+                classes=self.danger_classes,
+                tracker=self.tracker_config,
+            )
             
             # Current time for this frame
             frame_time = time.time()
@@ -123,7 +193,7 @@ class AIEngine:
                     center_point = (int(x), int(y))
                     
                     # 2. Check logic: Is center in DANGER_ZONE?
-                    in_zone = self.is_point_in_polygon(center_point, DANGER_ZONE)
+                    in_zone = self.is_point_in_polygon(center_point, self.zone)
                     
                     if in_zone:
                         current_ids_in_zone.append(track_id)
@@ -138,20 +208,28 @@ class AIEngine:
                         
                         # 4. Visualization & Alert
                         label_color = (0, 255, 255) # Yellow (Warning)
-                        
+                        class_name = self.class_names.get(cls, f"class_{cls}")
+
                         if duration > ALERT_THRESHOLD_SECONDS:
                             zone_color = (0, 0, 255) # Red (Critical)
                             label_color = (0, 0, 255)
                             
-                            # TRIGGER ALERT
-                            self.send_alert(track_id, self.class_names.get(cls, 'unknown'), conf)
+                            # TRIGGER ALERT + EVIDENCE
+                            self.send_alert(
+                                track_id,
+                                class_name,
+                                conf,
+                                duration,
+                                frame,
+                                (int(x - w/2), int(y - h/2), int(x + w/2), int(y + h/2)),
+                            )
                             
                         # Draw bounding box and timer
                         x1, y1 = int(x - w/2), int(y - h/2)
                         x2, y2 = int(x + w/2), int(y + h/2)
                         
                         cv2.rectangle(frame, (x1, y1), (x2, y2), label_color, 2)
-                        cv2.putText(frame, f"Stuck: {duration:.1f}s", (x1, y1 - 10), 
+                        cv2.putText(frame, f"{class_name} {duration:.1f}s", (x1, y1 - 10), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, label_color, 2)
                         
                     else:
@@ -176,11 +254,11 @@ class AIEngine:
                 self.tracked_objects.clear()
 
             # DRAW POLYGON ZONE
-            cv2.polylines(frame, [np.array(DANGER_ZONE, dtype=np.int32)], isClosed=True, color=zone_color, thickness=2)
+            cv2.polylines(frame, [np.array(self.zone, dtype=np.int32)], isClosed=True, color=zone_color, thickness=2)
             
             # Fill polygon semi-transparent
             overlay = frame.copy()
-            cv2.fillPoly(overlay, [np.array(DANGER_ZONE, dtype=np.int32)], zone_color)
+            cv2.fillPoly(overlay, [np.array(self.zone, dtype=np.int32)], zone_color)
             cv2.addWeighted(overlay, 0.3, frame, 0.7, 0, frame)
 
             # Display Status
@@ -195,11 +273,20 @@ class AIEngine:
 
 def main():
     parser = argparse.ArgumentParser(description="Aeon RailGuard AI Engine")
-    parser.add_argument("--source", "-s", type=str, default="datasets/videos/training_video.mp4", help="Video source path or webcam ID")
+    parser.add_argument("--source", "-s", type=str, default="datasets/videos/VID_20251207_143017243.mp4", help="Video source path or webcam ID")
     parser.add_argument("--model", "-m", type=str, default="yolov8n.pt", help="YOLOv8 model path")
+    parser.add_argument("--zone-file", "-z", type=str, default="danger_zone.json", help="Path to saved danger zone polygon (json list of [x, y])")
+    parser.add_argument("--evidence-dir", "-e", type=str, default="evidence", help="Directory to store evidence snapshots")
+    parser.add_argument("--tracker", "-t", type=str, default=DEFAULT_TRACKER, help="Tracker config file for ByteTrack")
     args = parser.parse_args()
 
-    engine = AIEngine(source=args.source, model_path=args.model)
+    engine = AIEngine(
+        source=args.source,
+        model_path=args.model,
+        zone_path=args.zone_file,
+        evidence_dir=args.evidence_dir,
+        tracker_config=args.tracker,
+    )
     engine.run()
 
 if __name__ == "__main__":

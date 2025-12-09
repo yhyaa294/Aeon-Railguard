@@ -60,3 +60,7 @@ Desktop.ini
 # --- EXCEPTIONS ---
 !command-dashboard/public/**
 
+# --- AI-ENGINE DATA ---
+ai-engine/datasets/
+ai-engine/training/
+

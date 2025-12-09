@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Path to the video file
-VIDEO_PATH = "datasets/videos/training_video.mp4"
+VIDEO_PATH = "datasets/videos/VID_20251207_142949636.mp4"
 
 # Global list to store points
 points = []
