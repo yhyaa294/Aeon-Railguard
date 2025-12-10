@@ -18,10 +18,11 @@ import json
 from datetime import datetime
 from ultralytics import YOLO
 
-# --- CONFIGURATION ---
-BRAIN_URL = "http://localhost:8080/api/internal/push"
-STREAM_URL = "http://localhost:8080/api/internal/stream/cam1"
-ENABLE_STREAM = True
+# --- CONFIGURATION (can be overridden by ENV) ---
+BRAIN_URL = os.getenv("BRAIN_URL", "http://localhost:8080/api/internal/push")
+STREAM_URL = os.getenv("STREAM_URL", "http://localhost:8080/api/internal/stream/cam1")
+CAMERA_ID = os.getenv("CAMERA_ID", "TITIK_A")
+ENABLE_STREAM = os.getenv("ENABLE_STREAM", "true").lower() != "false"
 ALERT_THRESHOLD_SECONDS = 3.0
 CONFIDENCE_THRESHOLD = 0.60
 # Default ByteTrack config bundled with ultralytics
@@ -62,7 +63,8 @@ class AIEngine:
         # Dictionary: {track_id: last_alert_time} to prevent spam
         self.alert_cooldowns = {}
         self.last_frame_push = 0.0
-        self.frame_push_interval = 0.1  # seconds between stream pushes
+        # Faster streaming by default (~20 FPS if source can keep up). Tune via env FRAME_PUSH_INTERVAL.
+        self.frame_push_interval = float(os.getenv("FRAME_PUSH_INTERVAL", "0.05"))
         
         # Danger classes (COCO indices)
         # 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
@@ -114,6 +116,7 @@ class AIEngine:
         path = os.path.join(self.evidence_dir, filename)
         cv2.imwrite(path, annotated)
         print(f"[EVIDENCE] Saved to {path}")
+        return filename
 
     def send_alert(self, obj_id, class_name, confidence, duration, frame, bbox):
         """Send HTTP POST alert to Central Brain."""
@@ -134,10 +137,13 @@ class AIEngine:
             "object_id": int(obj_id),
             "duration_seconds": float(duration),
             "timestamp": datetime.utcnow().isoformat() + "Z",
+            "camera_id": CAMERA_ID,
         }
         
         # Save evidence regardless of network status
-        self.save_evidence(frame, bbox, obj_id, class_name, confidence, duration)
+        evidence_filename = self.save_evidence(frame, bbox, obj_id, class_name, confidence, duration)
+        evidence_url = os.getenv("EVIDENCE_BASE_URL", "http://localhost:8080/evidence")
+        payload["image_url"] = f"{evidence_url}/{evidence_filename}"
         self.alert_cooldowns[obj_id] = current_time
 
         try:
@@ -154,7 +160,9 @@ class AIEngine:
             return
         self.last_frame_push = now
         try:
-            ok, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            # Lower quality for lighter bandwidth (default 75). Override via JPEG_QUALITY env.
+            jpeg_quality = int(os.getenv("JPEG_QUALITY", "75"))
+            ok, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             if not ok:
                 return
             # short timeout to avoid blocking when backend down

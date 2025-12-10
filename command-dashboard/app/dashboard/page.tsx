@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { useDetectionStream } from '@/hooks/useDetectionStream';
 
 // ========= TYPES =========
 type TabType = 'ALL' | 'TITIK_A' | 'TITIK_B' | 'TITIK_C' | 'TITIK_D';
@@ -12,18 +13,62 @@ type ChannelType = 'JPL_COORD' | 'STATION_REPORT';
 type ScheduleStatus = 'PASSED' | 'INCOMING' | 'LATE';
 type ScheduleFilter = 'ALL' | 'INCOMING' | 'LATE';
 
-interface CameraPoint { id: TabType; name: string; location: string; status: 'AMAN' | 'WASPADA' | 'BAHAYA'; image: string; confidence: number; violations: number; }
+type MediaSource = {
+  kind: 'stream' | 'file';
+  src: string;
+  poster?: string;
+  label?: string;
+};
+
+interface CameraPoint { id: TabType; name: string; location: string; status: 'AMAN' | 'WASPADA' | 'BAHAYA'; media: MediaSource; confidence: number; violations: number; }
 interface EvidenceItem { id: string; time: string; date: string; location: string; locationType: string; violationType: 'menerobos' | 'berhenti' | 'nekat'; thumbnail: string; duration: string; description: string; speed: string; platNomor: string; }
 interface RadioMessage { id: string; sender: string; time: string; message: string; isOwn: boolean; isAudio: boolean; }
 interface TrainScheduleItem { id: string; noKA: string; nama: string; relasi: string; tujuan: string; jadwal: string; realisasi: string; status: ScheduleStatus; delay?: number; }
 interface MapMarker { id: string; name: string; location: string; top: string; left: string; type: 'POST' | 'CCTV'; status: 'ONLINE' | 'WARNING' | 'OFFLINE'; }
 
 // ========= DATA =========
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const STREAM_URL = process.env.NEXT_PUBLIC_STREAM_URL || `${API_BASE}/stream/cam1`;
+const MEDIA_BASE = process.env.NEXT_PUBLIC_MEDIA_URL || '/api/media';
+const DETECTION_API = `${API_BASE}/api/detections`;
+
 const cameraPoints: CameraPoint[] = [
-  { id: 'TITIK_A', name: 'TITIK A', location: 'Jalur Tikus Sawah', status: 'AMAN', image: '/images/feed-street.jpg', confidence: 98, violations: 28 },
-  { id: 'TITIK_B', name: 'TITIK B', location: 'Gg. Masjid', status: 'WASPADA', image: '/images/feed-track.jpg', confidence: 87, violations: 67 },
-  { id: 'TITIK_C', name: 'TITIK C', location: 'Simpang Sekolah', status: 'AMAN', image: '/images/feed-street.jpg', confidence: 95, violations: 32 },
-  { id: 'TITIK_D', name: 'TITIK D', location: 'Pasar Kaget', status: 'AMAN', image: '/images/feed-track.jpg', confidence: 92, violations: 15 },
+  {
+    id: 'TITIK_A',
+    name: 'TITIK A',
+    location: 'Jalur Tikus Sawah',
+    status: 'AMAN',
+    media: { kind: 'stream', src: STREAM_URL, label: 'WEBCAM LIVE' },
+    confidence: 98,
+    violations: 28
+  },
+  {
+    id: 'TITIK_B',
+    name: 'TITIK B',
+    location: 'Gg. Masjid',
+    status: 'WASPADA',
+    media: { kind: 'file', src: `${MEDIA_BASE}?file=VID_20251207_142042915.mp4`, poster: '/images/feed-track.jpg', label: 'Dataset #1' },
+    confidence: 87,
+    violations: 67
+  },
+  {
+    id: 'TITIK_C',
+    name: 'TITIK C',
+    location: 'Simpang Sekolah',
+    status: 'AMAN',
+    media: { kind: 'file', src: `${MEDIA_BASE}?file=VID_20251207_142443358.mp4`, poster: '/images/feed-street.jpg', label: 'Dataset #2' },
+    confidence: 95,
+    violations: 32
+  },
+  {
+    id: 'TITIK_D',
+    name: 'TITIK D',
+    location: 'Pasar Kaget',
+    status: 'AMAN',
+    media: { kind: 'file', src: `${MEDIA_BASE}?file=VID_20251207_143017243.mp4`, poster: '/images/feed-track.jpg', label: 'Dataset #3' },
+    confidence: 92,
+    violations: 15
+  },
 ];
 
 const trainInfo = { name: 'KA Argo Wilis', eta: '05:00', locomotive: 'CC206-13-55' };
@@ -51,6 +96,14 @@ const mapMarkers: MapMarker[] = [
 
 // ========= COMPONENT =========
 export default function DashboardPage() {
+  const { latest, history, isConnected: wsConnected } = useDetectionStream(50);
+  const [detections, setDetections] = useState<any[]>([]);
+  const isDanger = useMemo(() => {
+    if (!latest) return false;
+    // Treat any person/vehicle in ROI as danger
+    return latest.in_roi && ['person', 'car', 'motorcycle', 'truck'].includes(latest.object_class);
+  }, [latest]);
+  const dangerCameraId = latest?.camera_id;
   const router = useRouter();
   const searchParams = useSearchParams();
   const menuParam = searchParams.get('menu');
@@ -85,6 +138,7 @@ export default function DashboardPage() {
   const [detectManusia, setDetectManusia] = useState(true);
   const [detectHewan, setDetectHewan] = useState(true);
   const [waNumber, setWaNumber] = useState('081234567890');
+  const [loadingConfig, setLoadingConfig] = useState(false);
 
   const aiInsightFull = "Analisis: Lonjakan aktivitas di Titik B pada 07:00-08:00.";
 
@@ -92,15 +146,74 @@ export default function DashboardPage() {
   useEffect(() => { if (activeView === 'ANALYTICS') { let i = 0; setAiTypingText(''); const t = setInterval(() => { if (i < aiInsightFull.length) { setAiTypingText(aiInsightFull.substring(0, i + 1)); i++; } else clearInterval(t); }, 30); return () => clearInterval(t); } }, [activeView]);
   useEffect(() => { if (menuParam === 'analytics') setActiveView('ANALYTICS'); else if (menuParam === 'archive') setActiveView('ARCHIVE'); else if (menuParam === 'communication') setActiveView('COMMUNICATION'); else if (menuParam === 'train') setActiveView('TRAIN_COMMS'); else if (menuParam === 'schedule') setActiveView('SCHEDULE'); else if (menuParam === 'map') setActiveView('MAP'); else if (menuParam === 'settings') setActiveView('SETTINGS'); else if (menuParam === 'monitoring') setActiveView('MONITORING'); }, [menuParam]);
   useEffect(() => { if (activeView === 'TRAIN_COMMS' && trainDistance > 100) { const t = setInterval(() => setTrainDistance(prev => Math.max(100, prev - 15)), 200); return () => clearInterval(t); } }, [activeView, trainDistance]);
+  useEffect(() => {
+    // Fetch persisted detections from backend
+    const fetchDetections = async () => {
+      try {
+        const res = await fetch(DETECTION_API);
+        if (!res.ok) return;
+        const data = await res.json();
+        setDetections(data.detections || []);
+      } catch (e) {
+        console.warn('Failed to fetch detections', e);
+      }
+    };
+    fetchDetections();
+    const interval = setInterval(fetchDetections, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const showCustomToast = (msg: string) => { setToastMessage(msg); setShowToast(true); setTimeout(() => setShowToast(false), 4000); };
   const triggerEmergency = () => { setShowEmergencyModal(false); setIsEmergency(true); showCustomToast('🚨 SINYAL BAHAYA TERKIRIM!'); setTimeout(() => setIsEmergency(false), 10000); };
   const triggerTrainStop = () => { setShowTrainStopModal(false); showCustomToast('⚠️ REM DARURAT TERKIRIM!'); };
-  const handleSaveSettings = () => showCustomToast('✅ Konfigurasi berhasil disimpan ke Central Brain.');
+  const handleSaveSettings = async () => {
+    setLoadingConfig(true);
+    try {
+      await fetch(`${API_BASE}/api/config/ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          threshold: aiThreshold,
+          detect_motor: detectMotor,
+          detect_mobil: detectMobil,
+          detect_manusia: detectManusia,
+          detect_hewan: detectHewan,
+        }),
+      });
+      showCustomToast('✅ Konfigurasi berhasil disimpan ke Central Brain.');
+    } catch (e) {
+      showCustomToast('⚠️ Gagal simpan konfigurasi.');
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
   const handleResetSettings = () => { setAiThreshold(75); setAlarmVolume(80); setAutoRecord(true); setDarkTheme(false); showCustomToast('🔄 Pengaturan direset ke default.'); };
+  // Load config from backend
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/config/ai`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.config) {
+          if (data.config.threshold !== undefined) setAiThreshold(Number(data.config.threshold));
+          if (data.config.detect_motor !== undefined) setDetectMotor(!!data.config.detect_motor);
+          if (data.config.detect_mobil !== undefined) setDetectMobil(!!data.config.detect_mobil);
+          if (data.config.detect_manusia !== undefined) setDetectManusia(!!data.config.detect_manusia);
+          if (data.config.detect_hewan !== undefined) setDetectHewan(!!data.config.detect_hewan);
+        }
+      } catch (e) {
+        console.warn('Config fetch failed', e);
+      }
+    };
+    loadConfig();
+  }, []);
   const handleLogout = () => { router.push('/login'); };
 
   const selectedCamera = cameraPoints.find(c => c.id === activeTab);
+  const isLatestForSelected = latest && (latest.camera_id ? latest.camera_id === selectedCamera?.id : true);
+  const latestConfidencePct = latest ? (latest.confidence * 100).toFixed(1) : null;
+  const latestStatusLabel = latest && latest.in_roi ? 'BAHAYA' : 'AMAN';
   const totalViolations = cameraPoints.reduce((sum, c) => sum + c.violations, 0);
   const mostDangerous = cameraPoints.reduce((max, c) => c.violations > max.violations ? c : max, cameraPoints[0]);
   const currentMessages = activeChannel === 'JPL_COORD' ? jplMessages : stationMessages;
@@ -123,18 +236,45 @@ export default function DashboardPage() {
 
       {/* MONITORING */}
       {activeView === 'MONITORING' && (<>
-        <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">🖥️ JPL 305 - NGEMBE</h1></div>
+        <div className="mb-4">
+          <h1 className="text-xl font-black text-[#2D2A70]">🖥️ JPL 305 - NGEMBE</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${wsConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+              WS {wsConnected ? 'TERHUBUNG' : 'PUTUS'}
+            </span>
+            {latest && (
+              <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-700">
+                TERBARU: {latest.object_class} {(latest.confidence * 100).toFixed(1)}% @ {new Date(latest.timestamp).toLocaleTimeString('id-ID')}
+              </span>
+            )}
+          </div>
+        </div>
         <div className="bg-white rounded-xl border p-2 mb-4 flex gap-2 overflow-x-auto">
           <button onClick={() => setActiveTab('ALL')} className={`px-3 py-2 rounded-lg font-bold text-sm ${activeTab === 'ALL' ? 'bg-[#2D2A70] text-white' : 'text-slate-600'}`}>👁️ ALL</button>
           {cameraPoints.map((c) => <button key={c.id} onClick={() => setActiveTab(c.id)} className={`px-3 py-2 rounded-lg font-bold text-sm ${activeTab === c.id ? 'bg-[#DA5525] text-white' : 'text-slate-600'}`}>📍 {c.name}</button>)}
         </div>
         {activeTab === 'ALL' ? (
-          <div className="grid grid-cols-2 gap-4">{cameraPoints.map((c) => <div key={c.id} onClick={() => setActiveTab(c.id)} className="bg-slate-900 rounded-xl overflow-hidden cursor-pointer relative aspect-video"><Image src={c.image} alt={c.name} fill className="object-cover opacity-80" /><div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 flex justify-between"><span className="text-white font-bold text-sm">{c.name}</span><span className={`px-2 py-0.5 rounded text-xs font-bold ${c.status === 'AMAN' ? 'bg-emerald-500' : 'bg-amber-500'} text-white`}>{c.status}</span></div></div>)}</div>
+          <div className="grid grid-cols-2 gap-4">
+            {cameraPoints.map((c) => (
+              <div key={c.id} onClick={() => setActiveTab(c.id)} className="bg-slate-900 rounded-xl overflow-hidden cursor-pointer relative aspect-video border border-white/10">
+                <MediaPlayer media={c.media} danger={isDanger && (!dangerCameraId || dangerCameraId === c.id)} />
+                <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 flex justify-between">
+                  <span className="text-white font-bold text-sm">{c.name}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${c.status === 'AMAN' ? 'bg-emerald-500' : 'bg-amber-500'} text-white`}>{c.status}</span>
+                </div>
+                {c.media.label && (
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md border border-white/10">
+                    {c.media.label}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {/* VIDEO WITH TACTICAL CONTROL DECK */}
             <div className="col-span-2 bg-slate-950 rounded-xl overflow-hidden relative aspect-video border border-white/10">
-              <Image src={selectedCamera?.image || ''} alt="Live" fill className="object-cover opacity-90" />
+              <MediaPlayer media={selectedCamera?.media} danger={isDanger && (!dangerCameraId || dangerCameraId === selectedCamera?.id)} />
 
               {/* AEON Watermark */}
               <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
@@ -202,9 +342,24 @@ export default function DashboardPage() {
               <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-white/10">
                 <h3 className="font-bold text-white text-sm mb-2">📊 Detection</h3>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between"><span className="text-slate-400">Confidence</span><span className="text-emerald-400 font-bold">{selectedCamera?.confidence}%</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Violations</span><span className="text-orange-400 font-bold">{selectedCamera?.violations}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-400">Status</span><span className={`font-bold ${selectedCamera?.status === 'AMAN' ? 'text-emerald-400' : 'text-amber-400'}`}>{selectedCamera?.status}</span></div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Confidence</span>
+                    <span className={`${latest && latest.in_roi ? 'text-red-400' : 'text-emerald-400'} font-bold`}>
+                      {isLatestForSelected && latestConfidencePct ? `${latestConfidencePct}%` : `${selectedCamera?.confidence}%`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Violations</span>
+                    <span className="text-orange-400 font-bold">
+                      {isLatestForSelected ? `${(selectedCamera?.violations || 0) + 1}` : selectedCamera?.violations}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Status</span>
+                    <span className={`font-bold ${isLatestForSelected && latest?.in_roi ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {isLatestForSelected ? latestStatusLabel : selectedCamera?.status}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -364,7 +519,7 @@ export default function DashboardPage() {
                     {/* DETAIL VIEW CONTENT */}
                     <div className="grid grid-cols-2 gap-6">
                       <div className="col-span-1 bg-black/40 rounded-2xl overflow-hidden border border-white/10 aspect-video relative group">
-                        <Image src={cameraPoints.find(c => c.id === activeTab)?.image || ''} alt="Bukti" fill className="object-cover opacity-80 group-hover:opacity-100 transition duration-500" />
+                        <MediaPlayer media={cameraPoints.find(c => c.id === activeTab)?.media} danger={isDanger && (!dangerCameraId || dangerCameraId === activeTab)} />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
                         <div className="absolute bottom-4 left-4">
                           <span className={`px-2 py-1 rounded text-xs font-black mb-2 inline-block ${cameraPoints.find(c => c.id === activeTab)?.status === 'AMAN' ? 'bg-emerald-500 text-slate-900' : 'bg-red-500 text-white animate-pulse'}`}>
@@ -376,13 +531,17 @@ export default function DashboardPage() {
 
                       <div className="col-span-1 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
+                    <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
                             <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Confidence</p>
-                            <p className="text-3xl font-black text-emerald-400">{cameraPoints.find(c => c.id === activeTab)?.confidence}%</p>
+                            <p className="text-3xl font-black text-emerald-400">
+                              {isLatestForSelected && latestConfidencePct ? `${latestConfidencePct}%` : `${cameraPoints.find(c => c.id === activeTab)?.confidence}%`}
+                            </p>
                           </div>
                           <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
                             <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Total Pelanggaran</p>
-                            <p className="text-3xl font-black text-orange-400">{cameraPoints.find(c => c.id === activeTab)?.violations}</p>
+                            <p className="text-3xl font-black text-orange-400">
+                              {isLatestForSelected ? `${(cameraPoints.find(c => c.id === activeTab)?.violations || 0) + 1}` : cameraPoints.find(c => c.id === activeTab)?.violations}
+                            </p>
                           </div>
                         </div>
 
@@ -412,7 +571,36 @@ export default function DashboardPage() {
       {
         activeView === 'ARCHIVE' && (<>
           <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">🗂️ ARSIP BUKTI</h1></div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{evidenceList.map((ev) => <div key={ev.id} className="bg-white rounded-xl shadow-lg overflow-hidden border"><div className="relative aspect-video bg-slate-900"><Image src={ev.thumbnail} alt={ev.id} fill className="object-cover opacity-90" /><div className="absolute top-2 left-2"><span className={`px-2 py-1 rounded text-xs font-bold ${violationBadge[ev.violationType].bg} ${violationBadge[ev.violationType].text}`}>{violationBadge[ev.violationType].label}</span></div></div><div className="p-3"><button onClick={() => setSelectedEvidence(ev)} className="w-full py-2 bg-[#2D2A70] text-white text-sm font-bold rounded-lg">👁️ Lihat</button></div></div>)}</div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {detections.length === 0 && <p className="text-slate-500 col-span-full">Belum ada bukti dari AI.</p>}
+            {detections.map((det, idx) => {
+              const vType = det.object_class === 'person' ? 'menerobos' : det.object_class === 'car' ? 'berhenti' : 'nekat';
+              const badge = violationBadge[vType as keyof typeof violationBadge] || violationBadge['nekat'];
+              return (
+                <div key={`${det.timestamp}-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden border">
+                  <div className="relative aspect-video bg-slate-900">
+                    {det.image_url ? (
+                      <Image src={det.image_url} alt="evidence" fill className="object-cover opacity-90" />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">No image</div>
+                    )}
+                    <div className="absolute top-2 left-2">
+                      <span className={`px-2 py-1 rounded text-xs font-bold ${badge.bg} ${badge.text}`}>{badge.label}</span>
+                    </div>
+                    <div className="absolute bottom-2 left-2 right-2 flex justify-between text-[10px] text-white drop-shadow">
+                      <span>{det.camera_id || '-'}</span>
+                      <span>{new Date(det.timestamp).toLocaleTimeString('id-ID')}</span>
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-1 text-xs text-slate-600">
+                    <div className="font-bold text-[#2D2A70] uppercase">{det.object_class}</div>
+                    <div>Conf: {(det.confidence * 100).toFixed(1)}%</div>
+                    <div>Durasi: {det.duration_seconds?.toFixed(1)}s</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </>)
       }
 
@@ -577,3 +765,56 @@ export default function DashboardPage() {
     </div >
   );
 }
+
+const MediaPlayer = ({ media, autoPlay = true, muted = true, danger = false }: { media?: MediaSource; autoPlay?: boolean; muted?: boolean; danger?: boolean }) => {
+  if (!media) {
+    return <div className="absolute inset-0 bg-slate-900 flex items-center justify-center text-slate-500 text-xs">Media tidak tersedia</div>;
+  }
+
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    if (media.kind !== 'stream') return;
+    const interval = setInterval(() => setRefreshKey(Date.now()), 15000);
+    return () => clearInterval(interval);
+  }, [media.kind]);
+
+  if (media.kind === 'stream') {
+    return (
+      <div className="absolute inset-0">
+        <img
+          key={refreshKey}
+          src={`${media.src}?t=${refreshKey}`}
+          alt={media.label || 'Live Stream'}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {danger && <DangerOverlay />}
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0">
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        src={media.src}
+        autoPlay={autoPlay}
+        muted={muted}
+        loop
+        playsInline
+        controls={false}
+        poster={media.poster}
+      />
+      {danger && <DangerOverlay />}
+    </div>
+  );
+};
+
+const DangerOverlay = () => (
+  <div className="absolute inset-0 bg-red-600/15 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+    <div className="flex items-center gap-3 px-4 py-2 bg-black/60 rounded-full border border-red-500/60 shadow-[0_0_20px_rgba(220,38,38,0.35)]">
+      <span className="animate-pulse text-red-400">🚨</span>
+      <span className="text-xs font-black text-red-100 tracking-wider">AI DETEKSI OBSTACLE</span>
+    </div>
+  </div>
+);

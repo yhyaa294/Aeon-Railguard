@@ -16,3 +16,4 @@ type DetectionPayload struct {
 	ImageURL         string    `json:"image_url,omitempty"`
 }
 
+

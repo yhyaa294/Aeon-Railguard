@@ -62,3 +62,8 @@ func detectSource(hasDB bool, list []models.DetectionPayload) string {
 	return "memory"
 }
 
+// DetectSource is re-used by detection handler.
+func DetectSource(hasDB bool, list []models.DetectionPayload) string {
+	return detectSource(hasDB, list)
+}
+

@@ -58,6 +58,9 @@ func main() {
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
+	// Serve evidence images saved by AI engine (shared folder ../ai-engine/evidence)
+	app.Static("/evidence", "../ai-engine/evidence")
+
 	// Root endpoint
 	app.Get("/", handleRoot)
 	app.Post("/api/internal/push", api.HandleInternalPush(hub, history, func(p models.DetectionPayload) error {
@@ -73,10 +76,27 @@ func main() {
 		}
 		return db.ListDetections(context.Background(), limit)
 	}))
+	app.Get("/api/detections", api.HandleDetections(history, func(limit int) ([]models.DetectionPayload, error) {
+		if db == nil {
+			return nil, nil
+		}
+		return db.ListDetections(context.Background(), limit)
+	}))
 
 	// Public endpoints (no auth required)
 	app.Post("/api/auth/login", api.HandleLogin)
 	app.Get("/api/health", api.HandleHealth)
+	app.All("/api/config/ai", api.HandleAIConfig(func(ctx context.Context, key string) (string, error) {
+		if db == nil {
+			return "", nil
+		}
+		return db.GetSetting(ctx, key)
+	}, func(ctx context.Context, key, value string) error {
+		if db == nil {
+			return fiber.ErrNotImplemented
+		}
+		return db.UpsertSetting(ctx, key, value)
+	}))
 
 	// Websocket endpoint (no auth for demo)
 	app.Use("/ws", func(c *fiber.Ctx) error {
@@ -101,7 +121,12 @@ func main() {
 	protected.Get("/cameras", middleware.RequireRole(models.RoleJPLOfficer), api.HandleGetCameras)
 
 	// Detections (requires JPL_OFFICER or higher)
-	protected.Get("/detections", middleware.RequireRole(models.RoleJPLOfficer), api.HandleGetDetections)
+	protected.Get("/detections", middleware.RequireRole(models.RoleJPLOfficer), api.HandleDetections(history, func(limit int) ([]models.DetectionPayload, error) {
+		if db == nil {
+			return nil, nil
+		}
+		return db.ListDetections(context.Background(), limit)
+	}))
 
 	// ============================================
 	// HACKATHON FASE 1: JPL Camera Endpoints

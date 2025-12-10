@@ -54,6 +54,11 @@ CREATE TABLE IF NOT EXISTS detection_logs (
 	detail TEXT,
 	image_url TEXT
 );
+CREATE TABLE IF NOT EXISTS settings (
+	key TEXT PRIMARY KEY,
+	value TEXT,
+	updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 `
 	_, err := db.Exec(ddl)
 	return err
@@ -133,4 +138,27 @@ func (d *Database) ListDetections(ctx context.Context, limit int) ([]models.Dete
 	return out, rows.Err()
 }
 
+// UpsertSetting stores a simple string setting.
+func (d *Database) UpsertSetting(ctx context.Context, key, value string) error {
+	if d == nil || d.conn == nil {
+		return nil
+	}
+	_, err := d.conn.ExecContext(ctx, `
+		INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP
+	`, key, value)
+	return err
+}
 
+// GetSetting returns setting value or empty.
+func (d *Database) GetSetting(ctx context.Context, key string) (string, error) {
+	if d == nil || d.conn == nil {
+		return "", nil
+	}
+	var val string
+	err := d.conn.QueryRowContext(ctx, `SELECT value FROM settings WHERE key=?`, key).Scan(&val)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return val, err
+}
