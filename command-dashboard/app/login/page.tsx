@@ -84,17 +84,25 @@ export default function CinematicLoginPage() {
             transition={{ duration: 1, ease: 'easeInOut' }}
             className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center"
           >
-            {/* Video Container with Shadow Frame */}
-            <div className="relative bg-white rounded-2xl shadow-2xl p-4 border border-slate-200">
-              <video
-                ref={videoRef}
-                src="/videos/video logo.mp4"
-                autoPlay
-                muted
-                playsInline
-                onEnded={handleVideoEnd}
-                onError={handleVideoError}
-                className="w-80 h-auto object-contain rounded-lg"
+            {/* Animated Logo Container */}
+            <div className="relative bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">
+              <motion.img
+                src="/images/logo Aeon.png"
+                alt="Aeon Logo"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: 1
+                }}
+                transition={{
+                  scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" },
+                  opacity: { duration: 0.5 }
+                }}
+                onAnimationStart={() => {
+                  // Auto proceed to login after 2.5 seconds
+                  setTimeout(handleVideoEnd, 2500);
+                }}
+                className="w-32 h-32 object-contain"
               />
             </div>
 
