@@ -1,871 +1,111 @@
+// @title Aeon RailGuard API
+// @version 2.1.0
+// @description REST API for Aeon RailGuard Central Brain with JWT authentication and RBAC
+// @contact.name API Support
+// @contact.email hello@aeonrailguard.id
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"central-brain/api"
+	"central-brain/middleware"
+	"central-brain/models"
 	"log"
-	"math/rand"
-	"sync"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/websocket/v2"
 )
-
-// --- ACTION 1: REDEFINE STRUCTS (Golang) ---
-
-// Unit (Leaf Node - CCTV/Sensor)
-type Unit struct {
-	ID     string  `json:"id"`
-	Name   string  `json:"name"`
-	Type   string  `json:"type"`
-	Status string  `json:"status"`
-	Lat    float64 `json:"lat"`
-	Long   float64 `json:"long"`
-}
-
-// Post (JPL Node)
-type Post struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	GeoLocation string `json:"geo_location"` // e.g., "-7.5456, 112.2134"
-	Units       []Unit `json:"units"`
-}
-
-// Station (District Node)
-type Station struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	HeadOfficer string `json:"head_officer"`
-	Posts       []Post `json:"posts"`
-}
-
-// Region (Root Node - DAOP)
-type Region struct {
-	ID       string    `json:"id"`
-	Name     string    `json:"name"`
-	Code     string    `json:"code"`
-	Stations []Station `json:"stations"`
-}
-
-// SystemState represents the real-time train and city status
-type SystemState struct {
-	TrainID    string  `json:"train_id"`
-	Speed      float64 `json:"speed"`
-	Distance   float64 `json:"distance"`
-	Status     string  `json:"status"`
-	CityAction string  `json:"city_action"`
-	Timestamp  string  `json:"timestamp"`
-}
-
-// UnitStatusUpdate represents a live status update for a unit
-type UnitStatusUpdate struct {
-	UnitID    string `json:"unit_id"`
-	Status    string `json:"status"`
-	Timestamp string `json:"timestamp"`
-}
-
-// IncidentPayload represents incoming AI detection alerts
-type IncidentPayload struct {
-	Type        string  `json:"type"`
-	ObjectClass string  `json:"object_class"`
-	Confidence  float64 `json:"confidence"`
-	InROI       bool    `json:"in_roi"`
-}
-
-// LoginPayload
-type LoginPayload struct {
-	ID       string `json:"id"`
-	Password string `json:"password"`
-}
-
-// LoginResponse
-type LoginResponse struct {
-	Token   string   `json:"token"`
-	Role    string   `json:"role"`
-	Name    string   `json:"name"`
-	Station *Station `json:"station,omitempty"`
-	Post    *Post    `json:"post,omitempty"`
-	Region  *Region  `json:"region,omitempty"`
-}
-
-// --- SMART CITY STATE MACHINE ---
-
-// CityStatus represents the Smart City response state
-type CityStatus struct {
-	TrafficLight    string `json:"traffic_light"`    // "NORMAL", "GREEN_WAVE", "RED_LOCK"
-	Ambulance       string `json:"ambulance"`        // "STANDBY", "DISPATCHED"
-	Police          string `json:"police"`           // "STANDBY", "DISPATCHED"
-	EvacuationRoute string `json:"evacuation_route"` // "OPEN", "CLOSED"
-	Siren           string `json:"siren"`            // "OFF", "WARNING", "CRITICAL"
-	RailCrossing    string `json:"rail_crossing"`    // "OPEN", "CLOSING", "CLOSED"
-	LastUpdate      string `json:"last_update"`
-}
-
-// CityState constants
-const (
-	// Distance thresholds (in km)
-	DISTANCE_SAFE     = 5.0
-	DISTANCE_CAUTION  = 3.0
-	DISTANCE_WARNING  = 1.5
-	DISTANCE_CRITICAL = 0.5
-)
-
-// IncidentLog represents a logged incident for history
-type IncidentLog struct {
-	ID        string `json:"id"`
-	Type      string `json:"type"`
-	Location  string `json:"location"`
-	Message   string `json:"message"`
-	Severity  string `json:"severity"`
-	Timestamp string `json:"timestamp"`
-}
-
-var (
-	// Current system state
-	state = SystemState{
-		TrainID:    "KA-2045",
-		Speed:      120.0,
-		Distance:   10.0,
-		Status:     "SAFE",
-		CityAction: "MONITORING",
-		Timestamp:  time.Now().Format("15:04:05"),
-	}
-
-	// Hierarchy Root
-	regionData Region
-
-	// Unit status map for live updates
-	unitStatuses    = make(map[string]string)
-	unitStatusMutex sync.RWMutex
-
-	// Mutex for thread-safe state access
-	stateMutex sync.RWMutex
-
-	// WebSocket clients
-	wsClients    = make(map[*websocket.Conn]bool)
-	wsClientsMux sync.Mutex
-
-	// Incident flag
-	incidentActive = false
-
-	// Smart City Status
-	cityStatus = CityStatus{
-		TrafficLight:    "NORMAL",
-		Ambulance:       "STANDBY",
-		Police:          "STANDBY",
-		EvacuationRoute: "OPEN",
-		Siren:           "OFF",
-		RailCrossing:    "OPEN",
-		LastUpdate:      time.Now().Format("15:04:05"),
-	}
-	cityStatusMutex sync.RWMutex
-
-	// --- DEMO GOD MODE ---
-	demoModeActive = false
-	demoModeMutex  sync.RWMutex
-
-	// Incident History Log
-	incidentHistory      = []IncidentLog{}
-	incidentHistoryMutex sync.RWMutex
-)
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-	initHierarchyData()
-}
-
-// --- ACTION 2: POPULATE MOCK DATA (Hardcode this Topology) ---
-func initHierarchyData() {
-	// Initialize Units
-	// Station 1 -> Post A
-	unitJBG01 := Unit{ID: "CCTV-JBG-01", Name: "CCTV-JBG-01 (Arah Timur)", Type: "CCTV", Status: "ONLINE", Lat: -7.5456, Long: 112.2134}
-	unitJBG02 := Unit{ID: "CCTV-JBG-02", Name: "CCTV-JBG-02 (Arah Barat)", Type: "CCTV", Status: "ONLINE", Lat: -7.5456, Long: 112.2134}
-
-	// Station 1 -> Post B
-	unitPTR01 := Unit{ID: "CCTV-PTR-01", Name: "CCTV-PTR-01 (Flyover)", Type: "CCTV", Status: "ONLINE", Lat: -7.5478, Long: 112.2156}
-
-	// Station 2 -> Post C
-	unitBRN01 := Unit{ID: "CCTV-BRN-01", Name: "CCTV-BRN-01", Type: "CCTV", Status: "ONLINE", Lat: -7.6012, Long: 112.1000}
-
-	// Initialize Posts
-	postA := Post{
-		ID:          "JPL-102",
-		Name:        "Pos JPL 102 (Jombang Kota)",
-		GeoLocation: "-7.5456, 112.2134",
-		Units:       []Unit{unitJBG01, unitJBG02},
-	}
-
-	postB := Post{
-		ID:          "JPL-105",
-		Name:        "Pos JPL 105 (Peterongan)",
-		GeoLocation: "-7.5478, 112.2156",
-		Units:       []Unit{unitPTR01},
-	}
-
-	postC := Post{
-		ID:          "JPL-98",
-		Name:        "Pos JPL 98 (Baron)",
-		GeoLocation: "-7.6012, 112.1000",
-		Units:       []Unit{unitBRN01},
-	}
-
-	// Initialize Stations
-	station1 := Station{
-		ID:          "STA-JBG",
-		Name:        "Stasiun Jombang",
-		HeadOfficer: "Bpk. Sutrisno",
-		Posts:       []Post{postA, postB},
-	}
-
-	station2 := Station{
-		ID:          "STA-KTS",
-		Name:        "Stasiun Kertosono",
-		HeadOfficer: "Bpk. Hartono",
-		Posts:       []Post{postC},
-	}
-
-	// Initialize Region (Root)
-	regionData = Region{
-		ID:       "DAOP-7",
-		Name:     "DAOP 7 MADIUN",
-		Code:     "D7",
-		Stations: []Station{station1, station2},
-	}
-
-	// Initialize Unit Status Map
-	unitStatuses["CCTV-JBG-01"] = "ONLINE"
-	unitStatuses["CCTV-JBG-02"] = "ONLINE"
-	unitStatuses["CCTV-PTR-01"] = "ONLINE"
-	unitStatuses["CCTV-BRN-01"] = "ONLINE"
-}
 
 func main() {
-	// Initialize Fiber
+	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
-		AppName: "Aeon RailGuard - Central Brain v2.0 (Refactored)",
+		AppName:      "Aeon RailGuard Central Brain v2.1.0",
+		ErrorHandler: middleware.ErrorHandler,
 	})
 
-	// Middleware
-	app.Use(logger.New(logger.Config{
-		Format:     "[${time}] ${status} - ${method} ${path} (${latency})\n",
-		TimeFormat: "15:04:05",
-	}))
-
-	// CORS
-	app.Use(cors.New(cors.Config{
+	// Global Middlewares
+	app.Use(middleware.Recover()) // Panic recovery
+	app.Use(middleware.Logger())  // Request logging
+	app.Use(cors.New(cors.Config{ // CORS
 		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept",
-		AllowMethods: "GET, POST, OPTIONS",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 
-	// Routes
+	// Root endpoint
 	app.Get("/", handleRoot)
-	app.Get("/api/status", handleGetStatus)
-	app.Post("/api/login", handleLogin)
-	app.Get("/api/hierarchy", handleGetHierarchy)
-	app.Get("/api/city-status", handleGetCityStatus)
-	app.Get("/api/incidents", handleGetIncidentHistory)
-	app.Post("/api/incident", handleIncident)
-	app.Post("/api/reset", handleReset)
 
-	// Demo God Mode
-	app.Post("/api/demo/trigger", handleDemoTrigger)
-	app.Get("/api/demo/status", handleDemoStatus)
+	// Public endpoints (no auth required)
+	app.Post("/api/auth/login", api.HandleLogin)
+	app.Get("/api/health", api.HandleHealth)
 
-	// WebSocket
-	app.Use("/ws", func(c *fiber.Ctx) error {
-		if websocket.IsWebSocketUpgrade(c) {
-			return c.Next()
-		}
-		return fiber.ErrUpgradeRequired
-	})
-	app.Get("/ws", websocket.New(handleWebSocket))
+	// Protected endpoints (JWT required)
+	protected := app.Group("/api")
+	protected.Use(middleware.AuthRequired())
 
-	// Background Tasks
-	go simulationEngine()
-	go cityStateMachine()
-	go wsBroadcaster()
-	go unitStatusSimulator()
+	// Hierarchy (RBAC filtered)
+	protected.Get("/hierarchy", api.HandleGetHierarchy)
 
-	// Banner
+	// Cameras (requires JPL_OFFICER or higher)
+	protected.Get("/cameras", middleware.RequireRole(models.RoleJPLOfficer), api.HandleGetCameras)
+
+	// Detections (requires JPL_OFFICER or higher)
+	protected.Get("/detections", middleware.RequireRole(models.RoleJPLOfficer), api.HandleGetDetections)
+
+	// Swagger documentation
+	// Uncomment after running: go install github.com/swaggo/swag/cmd/swag@latest && swag init
+	// app.Get("/api/docs/*", swagger.HandlerDefault)
+
+	// Print banner
 	printBanner()
 
-	// Start
+	// Start server
 	log.Fatal(app.Listen(":8080"))
-}
-
-func printBanner() {
-	log.Println("╔══════════════════════════════════════════════════════════╗")
-	log.Println("║     AEON RAILGUARD - CENTRAL BRAIN v3.1                  ║")
-	log.Println("║     Smart City State Machine + Demo God Mode             ║")
-	log.Println("╠══════════════════════════════════════════════════════════╣")
-	log.Println("║  HTTP Server  : http://localhost:8080                    ║")
-	log.Println("║  WebSocket    : ws://localhost:8080/ws                   ║")
-	log.Println("╠══════════════════════════════════════════════════════════╣")
-	log.Println("║  GET  /api/hierarchy   - Nested JSON Tree (RBAC)         ║")
-	log.Println("║  GET  /api/status      - Train & system status           ║")
-	log.Println("║  GET  /api/city-status - Smart City state machine        ║")
-	log.Println("║  POST /api/demo/trigger- DEMO GOD MODE (30s Critical)    ║")
-	log.Println("╚══════════════════════════════════════════════════════════╝")
 }
 
 func handleRoot(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"service": "Aeon RailGuard - Central Brain",
-		"version": "2.1.0-nested",
+		"version": "2.1.0",
 		"status":  "ONLINE",
+		"features": []string{
+			"JWT Authentication",
+			"Role-Based Access Control (RBAC)",
+			"Structured Logging",
+			"Error Handling",
+			"API Documentation",
+		},
 		"endpoints": fiber.Map{
-			"hierarchy": "GET /api/hierarchy",
-			"status":    "GET /api/status",
+			"health":     "GET /api/health",
+			"login":      "POST /api/auth/login",
+			"hierarchy":  "GET /api/hierarchy (Protected)",
+			"cameras":    "GET /api/cameras (Protected)",
+			"detections": "GET /api/detections (Protected)",
 		},
 	})
 }
 
-func handleGetStatus(c *fiber.Ctx) error {
-	stateMutex.RLock()
-	defer stateMutex.RUnlock()
-	return c.JSON(state)
-}
-
-func handleGetCityStatus(c *fiber.Ctx) error {
-	cityStatusMutex.RLock()
-	defer cityStatusMutex.RUnlock()
-	return c.JSON(cityStatus)
-}
-
-// --- ACTION 3: UPDATE API ENDPOINT WITH RBAC ---
-func handleGetHierarchy(c *fiber.Ctx) error {
-	// Parse the role query parameter
-	role := c.Query("role")
-
-	// Lock for reading unit statuses
-	unitStatusMutex.RLock()
-	defer unitStatusMutex.RUnlock()
-
-	// Helper function to update unit statuses in a slice
-	updateUnitStatuses := func(units []Unit) []Unit {
-		updatedUnits := make([]Unit, len(units))
-		copy(updatedUnits, units)
-		for i := range updatedUnits {
-			if val, ok := unitStatuses[updatedUnits[i].ID]; ok {
-				updatedUnits[i].Status = val
-			}
-		}
-		return updatedUnits
-	}
-
-	// Helper function to update post with current unit statuses
-	updatePostStatuses := func(post Post) Post {
-		post.Units = updateUnitStatuses(post.Units)
-		return post
-	}
-
-	// Helper function to update station with current unit statuses
-	updateStationStatuses := func(station Station) Station {
-		updatedPosts := make([]Post, len(station.Posts))
-		for i, post := range station.Posts {
-			updatedPosts[i] = updatePostStatuses(post)
-		}
-		station.Posts = updatedPosts
-		return station
-	}
-
-	// Switch based on role
-	switch role {
-
-	case "station":
-		// SIMULATION: User is "Kepala Stasiun Jombang"
-		// Return ONLY Stasiun Jombang
-		for _, station := range regionData.Stations {
-			if station.Name == "Stasiun Jombang" {
-				return c.JSON(updateStationStatuses(station))
-			}
-		}
-		return c.Status(404).JSON(fiber.Map{
-			"error":   "Station not found",
-			"message": "Stasiun Jombang not found in hierarchy",
-		})
-
-	case "jpl":
-		// SIMULATION: User is "Petugas JPL 102"
-		// Return ONLY Pos JPL 102
-		for _, station := range regionData.Stations {
-			for _, post := range station.Posts {
-				if post.ID == "JPL-102" {
-					return c.JSON(updatePostStatuses(post))
-				}
-			}
-		}
-		return c.Status(404).JSON(fiber.Map{
-			"error":   "Post not found",
-			"message": "Pos JPL 102 not found in hierarchy",
-		})
-
-	case "daop":
-		fallthrough
-	default:
-		// DAOP View: Return full Region hierarchy
-		response := Region{
-			ID:       regionData.ID,
-			Name:     regionData.Name,
-			Code:     regionData.Code,
-			Stations: make([]Station, len(regionData.Stations)),
-		}
-
-		for i, station := range regionData.Stations {
-			response.Stations[i] = updateStationStatuses(station)
-		}
-
-		return c.JSON(response)
-	}
-}
-
-func handleLogin(c *fiber.Ctx) error {
-	var payload LoginPayload
-	if err := c.BodyParser(&payload); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid request"})
-	}
-
-	// SUPER SIMPLE AUTH LOGIC (MOCK DB)
-	// Password for everyone is "123456" for simplicity in this demo
-	if payload.Password != "123456" {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid password"})
-	}
-
-	// 1. Check DAOP
-	if payload.ID == regionData.ID || payload.ID == "DAOP-7" {
-		return c.JSON(LoginResponse{
-			Token:  "mock-token-daop",
-			Role:   "DAOP_ADMIN",
-			Name:   "Admin DAOP 7",
-			Region: &regionData,
-		})
-	}
-
-	// 2. Check Stations
-	for _, station := range regionData.Stations {
-		// Check both ID and Code for flexibility
-		if station.ID == payload.ID || station.Name == payload.ID {
-			return c.JSON(LoginResponse{
-				Token:   "mock-token-station",
-				Role:    "STATION_MASTER",
-				Name:    "Kepala " + station.Name,
-				Station: &station,
-			})
-		}
-
-		// 3. Check Posts within Station
-		for _, post := range station.Posts {
-			if post.ID == payload.ID {
-				return c.JSON(LoginResponse{
-					Token: "mock-token-post",
-					Role:  "JPL_OFFICER",
-					Name:  "Petugas " + post.Name,
-					Post:  &post,
-				})
-			}
-		}
-	}
-
-	// 4. Fallback for hardcoded "JBG-001" mapping to Stasiun Jombang if not found above
-	if payload.ID == "JBG-001" {
-		for _, s := range regionData.Stations {
-			if s.ID == "STA-JBG" {
-				return c.JSON(LoginResponse{
-					Token:   "mock-token-jbg",
-					Role:    "STATION_MASTER",
-					Name:    "Kepala Stasiun Jombang",
-					Station: &s,
-				})
-			}
-		}
-	}
-
-	return c.Status(404).JSON(fiber.Map{"error": "User ID not found"})
-}
-
-func handleIncident(c *fiber.Ctx) error {
-	var payload IncidentPayload
-	if err := c.BodyParser(&payload); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid payload"})
-	}
-
-	log.Printf("[INCIDENT] %s detected (%s) - Confidence: %.1f%%\n", payload.Type, payload.ObjectClass, payload.Confidence*100)
-
-	stateMutex.Lock()
-	incidentActive = true
-	state.Status = "CRITICAL"
-	state.CityAction = "DISPATCHING POLICE & AMBULANCE"
-	stateMutex.Unlock()
-
-	go func() {
-		time.Sleep(8 * time.Second)
-		stateMutex.Lock()
-		incidentActive = false
-		state.Distance = 10.0
-		state.Speed = 120.0
-		log.Println("[SYSTEM] Incident cleared - Simulation reset")
-		stateMutex.Unlock()
-	}()
-
-	return c.Status(201).JSON(fiber.Map{"status": "ALERT_RECEIVED"})
-}
-
-func handleReset(c *fiber.Ctx) error {
-	stateMutex.Lock()
-	state.Distance = 10.0
-	state.Speed = 120.0
-	state.Status = "SAFE"
-	state.CityAction = "MONITORING"
-	incidentActive = false
-	stateMutex.Unlock()
-
-	cityStatusMutex.Lock()
-	cityStatus.TrafficLight = "NORMAL"
-	cityStatus.Ambulance = "STANDBY"
-	cityStatus.Police = "STANDBY"
-	cityStatus.EvacuationRoute = "OPEN"
-	cityStatus.Siren = "OFF"
-	cityStatus.RailCrossing = "OPEN"
-	cityStatus.LastUpdate = time.Now().Format("15:04:05")
-	cityStatusMutex.Unlock()
-
-	log.Println("[SYSTEM] Full reset - Train & City status restored")
-	return c.JSON(fiber.Map{"status": "RESET_COMPLETE"})
-}
-
-// --- DEMO GOD MODE HANDLERS ---
-
-func handleDemoTrigger(c *fiber.Ctx) error {
-	demoModeMutex.Lock()
-	if demoModeActive {
-		demoModeMutex.Unlock()
-		return c.Status(409).JSON(fiber.Map{
-			"status":  "ALREADY_ACTIVE",
-			"message": "Demo mode is already running",
-		})
-	}
-	demoModeActive = true
-	demoModeMutex.Unlock()
-
+func printBanner() {
 	log.Println("╔══════════════════════════════════════════════════════════╗")
-	log.Println("║  🚨 DEMO GOD MODE ACTIVATED - 30 SECOND CRITICAL ALERT   ║")
+	log.Println("║     AEON RAILGUARD - CENTRAL BRAIN v2.1.0                ║")
+	log.Println("║     REST API with JWT Auth & RBAC                        ║")
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Println("║  HTTP Server  : http://localhost:8080                    ║")
+	log.Println("║  API Docs     : http://localhost:8080/api/docs           ║")
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Println("║  POST /api/auth/login    - User authentication           ║")
+	log.Println("║  GET  /api/health        - Health check                  ║")
+	log.Println("║  GET  /api/hierarchy     - Organization hierarchy (RBAC) ║")
+	log.Println("║  GET  /api/cameras       - Camera list                   ║")
+	log.Println("║  GET  /api/detections    - Detection records             ║")
+	log.Println("╠══════════════════════════════════════════════════════════╣")
+	log.Println("║  Demo Credentials:                                       ║")
+	log.Println("║    ID: DAOP-7    Password: 123456 (DAOP Admin)           ║")
+	log.Println("║    ID: STA-JBG   Password: 123456 (Station Master)       ║")
+	log.Println("║    ID: JPL-102   Password: 123456 (JPL Officer)          ║")
 	log.Println("╚══════════════════════════════════════════════════════════╝")
-
-	// Force CRITICAL state
-	stateMutex.Lock()
-	incidentActive = true
-	state.Status = "CRITICAL"
-	state.Speed = 0
-	state.Distance = 0.1
-	state.CityAction = "EMERGENCY RESPONSE ACTIVATED"
-	stateMutex.Unlock()
-
-	// Force City to CRITICAL
-	cityStatusMutex.Lock()
-	cityStatus.TrafficLight = "GREEN_WAVE"
-	cityStatus.Ambulance = "DISPATCHED"
-	cityStatus.Police = "DISPATCHED"
-	cityStatus.EvacuationRoute = "CLOSED"
-	cityStatus.Siren = "CRITICAL"
-	cityStatus.RailCrossing = "CLOSED"
-	cityStatus.LastUpdate = time.Now().Format("15:04:05")
-	cityStatusMutex.Unlock()
-
-	// Add fake incident to history
-	incidentHistoryMutex.Lock()
-	newIncident := IncidentLog{
-		ID:        fmt.Sprintf("INC-%d", time.Now().Unix()),
-		Type:      "OBSTACLE_DETECTED",
-		Location:  "JPL 102 (Jombang Kota)",
-		Message:   "CRITICAL: Obstacle Detected at JPL 102 (Manual Verification)",
-		Severity:  "CRITICAL",
-		Timestamp: time.Now().Format("2006-01-02 15:04:05"),
-	}
-	incidentHistory = append([]IncidentLog{newIncident}, incidentHistory...)
-	// Keep only last 50 incidents
-	if len(incidentHistory) > 50 {
-		incidentHistory = incidentHistory[:50]
-	}
-	incidentHistoryMutex.Unlock()
-
-	// Broadcast immediately via WebSocket
-	broadcastDemoAlert()
-
-	// Auto-reset after 30 seconds
-	go func() {
-		time.Sleep(30 * time.Second)
-
-		demoModeMutex.Lock()
-		demoModeActive = false
-		demoModeMutex.Unlock()
-
-		stateMutex.Lock()
-		incidentActive = false
-		state.Status = "SAFE"
-		state.Speed = 120.0
-		state.Distance = 10.0
-		state.CityAction = "MONITORING"
-		stateMutex.Unlock()
-
-		cityStatusMutex.Lock()
-		cityStatus.TrafficLight = "NORMAL"
-		cityStatus.Ambulance = "STANDBY"
-		cityStatus.Police = "STANDBY"
-		cityStatus.EvacuationRoute = "OPEN"
-		cityStatus.Siren = "OFF"
-		cityStatus.RailCrossing = "OPEN"
-		cityStatus.LastUpdate = time.Now().Format("15:04:05")
-		cityStatusMutex.Unlock()
-
-		log.Println("[DEMO] God Mode deactivated - System restored to normal")
-	}()
-
-	return c.Status(200).JSON(fiber.Map{
-		"status":   "DEMO_TRIGGERED",
-		"message":  "Critical alert activated for 30 seconds",
-		"duration": 30,
-		"incident": newIncident,
-	})
-}
-
-func handleDemoStatus(c *fiber.Ctx) error {
-	demoModeMutex.RLock()
-	active := demoModeActive
-	demoModeMutex.RUnlock()
-
-	return c.JSON(fiber.Map{
-		"demo_active": active,
-		"timestamp":   time.Now().Format("15:04:05"),
-	})
-}
-
-func handleGetIncidentHistory(c *fiber.Ctx) error {
-	incidentHistoryMutex.RLock()
-	defer incidentHistoryMutex.RUnlock()
-
-	return c.JSON(fiber.Map{
-		"incidents": incidentHistory,
-		"count":     len(incidentHistory),
-	})
-}
-
-func broadcastDemoAlert() {
-	alertData, _ := json.Marshal(fiber.Map{
-		"type": "demo_alert",
-		"data": fiber.Map{
-			"active":    true,
-			"message":   "DEMO GOD MODE - CRITICAL ALERT",
-			"timestamp": time.Now().Format("15:04:05"),
-		},
-	})
-
-	wsClientsMux.Lock()
-	for client := range wsClients {
-		client.WriteMessage(websocket.TextMessage, alertData)
-	}
-	wsClientsMux.Unlock()
-}
-
-func handleWebSocket(c *websocket.Conn) {
-	wsClientsMux.Lock()
-	wsClients[c] = true
-	wsClientsMux.Unlock()
-
-	stateMutex.RLock()
-	initialData, _ := json.Marshal(state)
-	stateMutex.RUnlock()
-	c.WriteMessage(websocket.TextMessage, initialData)
-
-	defer func() {
-		wsClientsMux.Lock()
-		delete(wsClients, c)
-		wsClientsMux.Unlock()
-		c.Close()
-	}()
-
-	for {
-		if _, _, err := c.ReadMessage(); err != nil {
-			break
-		}
-	}
-}
-
-func simulationEngine() {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		stateMutex.Lock()
-		state.Timestamp = time.Now().Format("15:04:05")
-
-		if incidentActive {
-			if state.Speed > 0 {
-				state.Speed -= 20.0
-				if state.Speed < 0 {
-					state.Speed = 0
-				}
-			}
-		} else {
-			state.Distance -= 0.2
-			if state.Distance < 0 {
-				state.Distance = 0
-			}
-
-			if state.Distance < 1.0 {
-				state.Status = "CRITICAL"
-				state.CityAction = "DISPATCHING POLICE & AMBULANCE"
-			} else if state.Distance < 3.0 {
-				state.Status = "WARNING"
-				state.CityAction = "TRAFFIC CAUTION ACTIVATED"
-			} else {
-				state.Status = "SAFE"
-				state.CityAction = "MONITORING"
-			}
-
-			if state.Distance <= 0 {
-				state.Distance = 10.0
-				state.Speed = 120.0
-				state.Status = "SAFE"
-				state.CityAction = "MONITORING"
-			}
-		}
-		stateMutex.Unlock()
-	}
-}
-
-// --- SMART CITY STATE MACHINE GOROUTINE ---
-func cityStateMachine() {
-	ticker := time.NewTicker(500 * time.Millisecond)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		stateMutex.RLock()
-		distance := state.Distance
-		isIncident := incidentActive
-		stateMutex.RUnlock()
-
-		cityStatusMutex.Lock()
-		cityStatus.LastUpdate = time.Now().Format("15:04:05")
-
-		if isIncident {
-			// INCIDENT ACTIVE: Maximum alert state
-			cityStatus.TrafficLight = "RED_LOCK"
-			cityStatus.Ambulance = "DISPATCHED"
-			cityStatus.Police = "DISPATCHED"
-			cityStatus.EvacuationRoute = "CLOSED"
-			cityStatus.Siren = "CRITICAL"
-			cityStatus.RailCrossing = "CLOSED"
-			log.Println("[CITY] STATE: INCIDENT ACTIVE - All emergency services dispatched")
-		} else {
-			// Distance-based state machine
-			switch {
-			case distance <= DISTANCE_CRITICAL:
-				// CRITICAL: Train very close, full lockdown
-				cityStatus.TrafficLight = "RED_LOCK"
-				cityStatus.Ambulance = "DISPATCHED"
-				cityStatus.Police = "DISPATCHED"
-				cityStatus.EvacuationRoute = "CLOSED"
-				cityStatus.Siren = "CRITICAL"
-				cityStatus.RailCrossing = "CLOSED"
-
-			case distance <= DISTANCE_WARNING:
-				// WARNING: Train approaching, prepare emergency
-				cityStatus.TrafficLight = "RED_LOCK"
-				cityStatus.Ambulance = "STANDBY"
-				cityStatus.Police = "DISPATCHED"
-				cityStatus.EvacuationRoute = "OPEN"
-				cityStatus.Siren = "WARNING"
-				cityStatus.RailCrossing = "CLOSED"
-
-			case distance <= DISTANCE_CAUTION:
-				// CAUTION: Clear the path for train
-				cityStatus.TrafficLight = "GREEN_WAVE"
-				cityStatus.Ambulance = "STANDBY"
-				cityStatus.Police = "STANDBY"
-				cityStatus.EvacuationRoute = "OPEN"
-				cityStatus.Siren = "WARNING"
-				cityStatus.RailCrossing = "CLOSING"
-
-			case distance <= DISTANCE_SAFE:
-				// SAFE but monitoring
-				cityStatus.TrafficLight = "NORMAL"
-				cityStatus.Ambulance = "STANDBY"
-				cityStatus.Police = "STANDBY"
-				cityStatus.EvacuationRoute = "OPEN"
-				cityStatus.Siren = "OFF"
-				cityStatus.RailCrossing = "OPEN"
-
-			default:
-				// DEFAULT: All clear
-				cityStatus.TrafficLight = "NORMAL"
-				cityStatus.Ambulance = "STANDBY"
-				cityStatus.Police = "STANDBY"
-				cityStatus.EvacuationRoute = "OPEN"
-				cityStatus.Siren = "OFF"
-				cityStatus.RailCrossing = "OPEN"
-			}
-		}
-		cityStatusMutex.Unlock()
-	}
-}
-
-func wsBroadcaster() {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		stateMutex.RLock()
-		trainData, _ := json.Marshal(fiber.Map{"type": "train_status", "data": state})
-		stateMutex.RUnlock()
-
-		cityStatusMutex.RLock()
-		cityData, _ := json.Marshal(fiber.Map{"type": "city_status", "data": cityStatus})
-		cityStatusMutex.RUnlock()
-
-		unitStatusMutex.RLock()
-		var unitUpdates []UnitStatusUpdate
-		for id, status := range unitStatuses {
-			unitUpdates = append(unitUpdates, UnitStatusUpdate{
-				UnitID:    id,
-				Status:    status,
-				Timestamp: time.Now().Format("15:04:05"),
-			})
-		}
-		unitData, _ := json.Marshal(fiber.Map{"type": "unit_status", "data": unitUpdates})
-		unitStatusMutex.RUnlock()
-
-		wsClientsMux.Lock()
-		for client := range wsClients {
-			client.WriteMessage(websocket.TextMessage, trainData)
-			client.WriteMessage(websocket.TextMessage, cityData)
-			client.WriteMessage(websocket.TextMessage, unitData)
-		}
-		wsClientsMux.Unlock()
-	}
-}
-
-func unitStatusSimulator() {
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
-
-	statuses := []string{"ONLINE", "ONLINE", "ONLINE", "WARNING", "OFFLINE"}
-	// Update with NEW IDs
-	unitIDs := []string{
-		"CCTV-JBG-01", "CCTV-JBG-02", "CCTV-PTR-01", "CCTV-BRN-01",
-	}
-
-	for range ticker.C {
-		unitStatusMutex.Lock()
-		randomUnit := unitIDs[rand.Intn(len(unitIDs))]
-		newStatus := statuses[rand.Intn(len(statuses))]
-
-		if _, ok := unitStatuses[randomUnit]; ok {
-			unitStatuses[randomUnit] = newStatus
-		}
-		unitStatusMutex.Unlock()
-	}
 }
