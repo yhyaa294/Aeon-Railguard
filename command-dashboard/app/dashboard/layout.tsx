@@ -45,6 +45,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentView = searchParams.get('view');
+  const currentMenu = searchParams.get('menu');
   const notifRef = useRef<HTMLDivElement>(null);
 
   const [currentTime, setCurrentTime] = useState<string>('');
