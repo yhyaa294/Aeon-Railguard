@@ -83,13 +83,13 @@ export default function LandingPage() {
           <motion.div
             key="splash"
             exit={{ opacity: 0, transition: { duration: 0.5 } }}
-            className="fixed inset-0 z-[60] bg-black flex flex-col items-center justify-center cursor-pointer"
+            className="fixed inset-0 z-[60] bg-white flex flex-col items-center justify-center cursor-pointer"
             onClick={handleSplashClick}
           >
             <motion.div animate={{ opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 2 }}>
               <Image src="/images/logo Aeon.png" alt="Aeon" width={100} height={100} className="mb-6" />
             </motion.div>
-            <h1 className="text-white text-2xl font-bold tracking-widest mb-6">AEON RAILGUARD</h1>
+            <h1 className="text-[#2D2A70] text-2xl font-bold tracking-widest mb-6">AEON RAILGUARD</h1>
             <button className="px-8 py-3 bg-[#DA5525] hover:bg-[#c44a1f] text-white font-bold rounded-full shadow-lg transition-all hover:scale-105">
               KLIK UNTUK MASUK
             </button>
