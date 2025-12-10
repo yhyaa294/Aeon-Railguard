@@ -273,203 +273,319 @@ export default function DashboardPage() {
           {/* MAIN CONTENT AREA */}
           <div className="flex-1 bg-slate-900/80 backdrop-blur-xl rounded-xl border border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
             {/* AEON Logo Watermark */}
-            <td className="p-3 font-mono text-slate-300">07:15:33</td>
-            <td className="p-3 text-slate-300">🚗 Mobil</td>
-            <td className="p-3 font-bold text-emerald-400">97%</td>
-            <td className="p-3"><span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold border border-emerald-500/30">CLEAR</span></td>
-            <td className="p-3 text-blue-400 cursor-pointer hover:text-blue-300">Lihat</td>
-          </tr>
-          <tr className="border-b border-white/5 hover:bg-white/5 transition-colors">
-            <td className="p-3 font-mono text-slate-300">06:58:21</td>
-            <td className="p-3 text-slate-300">🐄 Hewan</td>
-            <td className="p-3 font-bold text-amber-400">78%</td>
-            <td className="p-3"><span className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold border border-red-500/30">BAHAYA</span></td>
-            <td className="p-3 text-blue-400 cursor-pointer hover:text-blue-300">Lihat</td>
-          </tr>
-          <tr className="hover:bg-white/5 transition-colors">
-            <td className="p-3 font-mono text-slate-300">06:45:10</td>
-            <td className="p-3 text-slate-300">🏍️ Motor</td>
-            <td className="p-3 font-bold text-emerald-400">92%</td>
-            <td className="p-3"><span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded text-xs font-bold border border-amber-500/30">WASPADA</span></td>
-            <td className="p-3 text-blue-400 cursor-pointer hover:text-blue-300">Lihat</td>
-          </tr>
-        </tbody>
-                    </table>
-                  </div >
-                </div >
-              )
-}
-            </div >
-          </div >
-        </div >
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] grayscale invert">
+              <Image src="/images/logo Aeon.png" alt="AEON" width={500} height={500} className="object-contain" />
+            </div>
+
+            <div className="relative z-10 flex-1 overflow-hidden flex flex-col">
+              {/* Content Header */}
+              <div className="p-6 border-b border-white/10 bg-white/5 backdrop-blur-sm flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg ring-1 ring-white/10 ${activeTab === 'ALL' ? 'bg-gradient-to-br from-blue-600 to-indigo-700' : 'bg-gradient-to-br from-orange-500 to-red-600'}`}>
+                    {activeTab === 'ALL' ? '📊' : '📍'}
+                  </div>
+                  <div>
+                    <h2 className="font-black text-white text-2xl tracking-tight mb-1">{activeTab === 'ALL' ? 'Executive Summary' : `Detail: ${cameraPoints.find(c => c.id === activeTab)?.name}`}</h2>
+                    <p className="text-xs text-slate-400 flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-white/10 border border-white/5">LIVE DATA</span>
+                      <span>•</span>
+                      <span>Updated: {currentTime}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {activeTab !== 'ALL' && (
+                  <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-white/10 text-xs font-bold transition flex items-center gap-2">
+                    🎥 LIHAT LIVE CCTV
+                  </button>
+                )}
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                {activeTab === 'ALL' ? (
+                  <div className="space-y-6">
+                    {/* TOP STATS ROW */}
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="bg-gradient-to-br from-indigo-900/50 to-slate-900/50 p-5 rounded-2xl border border-indigo-500/20 relative group overflow-hidden">
+                        <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/10 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                        <p className="text-indigo-300 text-xs font-bold uppercase tracking-wider mb-2">Total Pelanggaran</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-black text-white">{cameraPoints.reduce((acc, c) => acc + c.violations, 0)}</span>
+                          <span className="text-xs text-emerald-400 font-bold">▲ 12%</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-emerald-900/50 to-slate-900/50 p-5 rounded-2xl border border-emerald-500/20 relative group overflow-hidden">
+                        <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/10 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                        <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider mb-2">Sistem Akurasi</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-black text-white">98.5</span>
+                          <span className="text-lg text-emerald-400/70">%</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-amber-900/50 to-slate-900/50 p-5 rounded-2xl border border-amber-500/20 relative group overflow-hidden">
+                        <div className="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/10 rounded-full group-hover:scale-125 transition-transform duration-500"></div>
+                        <p className="text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">Titik Rawan</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-black text-white truncate max-w-full">Titik B (Pasar)</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-blue-900/50 to-slate-900/50 p-5 rounded-2xl border border-blue-500/20 relative group overflow-hidden flex flex-col justify-center">
+                        <button className="w-full h-full border-2 border-dashed border-blue-500/30 rounded-xl flex flex-col items-center justify-center text-blue-400 hover:bg-blue-500/10 transition">
+                          <span className="text-2xl mb-1">📥</span>
+                          <span className="text-xs font-bold">UNDUH LAPORAN</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* AI INSIGHT */}
+                    <div className="p-1 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600">
+                      <div className="bg-slate-900 rounded-xl p-4 flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                          <span className="text-xl animate-pulse">🤖</span>
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-sm mb-1">AI Smart Analysis</h4>
+                          <p className="text-slate-300 text-sm font-mono leading-relaxed">
+                            {aiTypingText}
+                            <span className="ml-1 w-2 h-4 bg-blue-500 inline-block animate-pulse align-middle"></span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CHART PLACEHOLDER (Use CSS Grid for visual chart) */}
+                    <div className="bg-slate-800/40 border border-white/5 rounded-2xl p-6">
+                      <h3 className="font-bold text-white mb-6">Tren Pelanggaran Mingguan</h3>
+                      <div className="h-48 flex items-end justify-between gap-2 px-4">
+                        {[45, 60, 35, 80, 50, 75, 40].map((h, i) => (
+                          <div key={i} className="w-full bg-blue-600/20 rounded-t-lg relative group transition-all hover:bg-blue-500/40">
+                            <div style={{ height: `${h}%` }} className="w-full bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t-lg absolute bottom-0 transition-all duration-500 group-hover:shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition">{h}</div>
+                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-mono">H-{7 - i}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+                    {/* DETAIL VIEW CONTENT */}
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="col-span-1 bg-black/40 rounded-2xl overflow-hidden border border-white/10 aspect-video relative group">
+                        <Image src={cameraPoints.find(c => c.id === activeTab)?.image || ''} alt="Bukti" fill className="object-cover opacity-80 group-hover:opacity-100 transition duration-500" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
+                        <div className="absolute bottom-4 left-4">
+                          <span className={`px-2 py-1 rounded text-xs font-black mb-2 inline-block ${cameraPoints.find(c => c.id === activeTab)?.status === 'AMAN' ? 'bg-emerald-500 text-slate-900' : 'bg-red-500 text-white animate-pulse'}`}>
+                            STATUS: {cameraPoints.find(c => c.id === activeTab)?.status}
+                          </span>
+                          <h3 className="text-white font-bold">{cameraPoints.find(c => c.id === activeTab)?.name}</h3>
+                        </div>
+                      </div>
+
+                      <div className="col-span-1 space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
+                            <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Confidence</p>
+                            <p className="text-3xl font-black text-emerald-400">{cameraPoints.find(c => c.id === activeTab)?.confidence}%</p>
+                          </div>
+                          <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
+                            <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Total Pelanggaran</p>
+                            <p className="text-3xl font-black text-orange-400">{cameraPoints.find(c => c.id === activeTab)?.violations}</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5 h-40 overflow-y-auto custom-scrollbar">
+                          <h4 className="text-slate-300 font-bold mb-2 text-sm">Riwayat Aktivitas</h4>
+                          <ul className="space-y-2">
+                            {evidenceList.filter(e => e.location === cameraPoints.find(c => c.id === activeTab)?.name).map((e, idx) => (
+                              <li key={idx} className="flex items-center justify-between text-xs p-2 hover:bg-white/5 rounded transition">
+                                <span className="text-slate-400">{e.time}</span>
+                                <span className="text-white">{e.description}</span>
+                              </li>
+                            ))}
+                            {evidenceList.length === 0 && <p className="text-slate-500 text-xs italic">Belum ada aktivitas hari ini.</p>}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-{/* ARCHIVE */ }
-{
-  activeView === 'ARCHIVE' && (<>
-    <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">🗂️ ARSIP BUKTI</h1></div>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{evidenceList.map((ev) => <div key={ev.id} className="bg-white rounded-xl shadow-lg overflow-hidden border"><div className="relative aspect-video bg-slate-900"><Image src={ev.thumbnail} alt={ev.id} fill className="object-cover opacity-90" /><div className="absolute top-2 left-2"><span className={`px-2 py-1 rounded text-xs font-bold ${violationBadge[ev.violationType].bg} ${violationBadge[ev.violationType].text}`}>{violationBadge[ev.violationType].label}</span></div></div><div className="p-3"><button onClick={() => setSelectedEvidence(ev)} className="w-full py-2 bg-[#2D2A70] text-white text-sm font-bold rounded-lg">👁️ Lihat</button></div></div>)}</div>
-  </>)
-}
+      {/* ARCHIVE */}
+      {
+        activeView === 'ARCHIVE' && (<>
+          <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">🗂️ ARSIP BUKTI</h1></div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{evidenceList.map((ev) => <div key={ev.id} className="bg-white rounded-xl shadow-lg overflow-hidden border"><div className="relative aspect-video bg-slate-900"><Image src={ev.thumbnail} alt={ev.id} fill className="object-cover opacity-90" /><div className="absolute top-2 left-2"><span className={`px-2 py-1 rounded text-xs font-bold ${violationBadge[ev.violationType].bg} ${violationBadge[ev.violationType].text}`}>{violationBadge[ev.violationType].label}</span></div></div><div className="p-3"><button onClick={() => setSelectedEvidence(ev)} className="w-full py-2 bg-[#2D2A70] text-white text-sm font-bold rounded-lg">👁️ Lihat</button></div></div>)}</div>
+        </>)
+      }
 
-{/* COMMUNICATION */ }
-{
-  activeView === 'COMMUNICATION' && (<>
-    <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">📻 KOMUNIKASI RADIO</h1></div>
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-220px)]">
-      <div className="lg:col-span-1 bg-slate-900 rounded-xl p-4"><h3 className="text-white font-bold mb-4">📡 Saluran</h3><div className="space-y-3"><div onClick={() => setActiveChannel('JPL_COORD')} className={`p-4 rounded-xl cursor-pointer ${activeChannel === 'JPL_COORD' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'}`}><span className="font-bold">JALUR 1</span></div><div onClick={() => setActiveChannel('STATION_REPORT')} className={`p-4 rounded-xl cursor-pointer ${activeChannel === 'STATION_REPORT' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}><span className="font-bold">JALUR 2</span></div></div></div>
-      <div className="lg:col-span-2 bg-slate-800 rounded-xl flex flex-col overflow-hidden"><div className="bg-slate-900 px-4 py-3"><h3 className="text-white font-bold">{activeChannel === 'JPL_COORD' ? '📻 Koordinasi JPL' : '📻 Stasiun'}</h3></div><div className="flex-1 overflow-y-auto p-4 space-y-3">{currentMessages.map((msg) => <div key={msg.id} className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[75%] rounded-xl p-3 ${msg.isOwn ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-100'}`}><span className="text-xs font-bold">{msg.sender}</span><p className="text-sm">{msg.message}</p></div></div>)}</div><div className="bg-slate-900 p-4 flex items-center gap-4"><input type="text" value={textMessage} onChange={(e) => setTextMessage(e.target.value)} placeholder="Ketik..." className="flex-1 bg-slate-700 text-white px-4 py-3 rounded-xl text-sm" /><button onMouseDown={() => setIsTalking(true)} onMouseUp={() => setIsTalking(false)} className={`w-16 h-16 rounded-full flex items-center justify-center ${isTalking ? 'bg-red-600 scale-110' : 'bg-emerald-600'} text-white text-xl`}>{isTalking ? '📡' : '🎙️'}</button></div></div>
-    </div>
-  </>)
-}
-
-{/* TRAIN COMMS */ }
-{
-  activeView === 'TRAIN_COMMS' && (
-    <div className="space-y-4">
-      <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">🚆 KOMUNIKASI MASINIS</h1></div>
-      <div className="bg-slate-900 rounded-xl p-4 border border-slate-700 grid grid-cols-3 gap-4 items-center"><div><p className="text-emerald-400 font-mono text-sm">🟢 CONNECTED</p></div><div className="text-center"><p className="text-white font-black">KA 102 - ARGO WILIS</p></div><div className="text-right"><p className="text-emerald-400 font-mono text-xs">98%</p></div></div>
-      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 relative h-20"><div className="absolute top-1/2 left-0 right-0 h-2 bg-slate-600 rounded-full -translate-y-1/2"></div><motion.div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: `${trainPosition}%` }}><div className="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded mb-1 font-mono">{trainDistanceKm} KM</div><div className="text-2xl">🚆</div></motion.div></div>
-      <div className="grid grid-cols-3 gap-4"><button onClick={() => showCustomToast('📡 Reply: 24ms')} className="bg-blue-600 text-white p-6 rounded-xl text-center"><div className="text-3xl mb-2">📡</div><p className="font-black">PING</p></button><button onClick={() => showCustomToast('✅ AMAN dikirim')} className="bg-emerald-600 text-white p-6 rounded-xl text-center"><div className="text-3xl mb-2">✅</div><p className="font-black">AMAN</p></button><button onClick={() => setShowTrainStopModal(true)} className="bg-red-600 text-white p-6 rounded-xl text-center animate-pulse"><div className="text-3xl mb-2">⚠️</div><p className="font-black">DARURAT</p></button></div>
-    </div>
-  )
-}
-
-{/* SCHEDULE */ }
-{
-  activeView === 'SCHEDULE' && (
-    <div className="space-y-4">
-      <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">📅 JADWAL KERETA</h1></div>
-      <div className="flex items-center gap-4 bg-white rounded-xl p-3 border"><input type="text" placeholder="🔍 Cari..." value={scheduleSearch} onChange={(e) => setScheduleSearch(e.target.value)} className="flex-1 px-4 py-2 bg-slate-100 rounded-lg text-sm" /><div className="flex gap-2"><button onClick={() => setScheduleFilter('ALL')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'ALL' ? 'bg-[#2D2A70] text-white' : 'bg-slate-100'}`}>Semua</button><button onClick={() => setScheduleFilter('INCOMING')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'INCOMING' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Datang</button><button onClick={() => setScheduleFilter('LATE')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'LATE' ? 'bg-red-600 text-white' : 'bg-slate-100'}`}>Telat</button></div></div>
-      <div className="bg-white rounded-xl border overflow-hidden"><table className="w-full text-sm"><thead className="bg-[#2D2A70] text-white"><tr><th className="p-4 text-left">KA</th><th className="p-4 text-left">Tujuan</th><th className="p-4 text-left">Jadwal</th><th className="p-4 text-left">Status</th></tr></thead><tbody>{filteredSchedule.map((t, i) => <tr key={t.id} className={i % 2 === 0 ? '' : 'bg-slate-50'}><td className="p-4 font-bold text-[#2D2A70]">{t.noKA} - {t.nama}</td><td className="p-4">{t.tujuan}</td><td className="p-4 font-mono">{t.jadwal}</td><td className="p-4">{t.status === 'PASSED' ? <span className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-xs">✓</span> : t.status === 'INCOMING' ? <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs animate-pulse">🔵</span> : <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs">🔴</span>}</td></tr>)}</tbody></table></div>
-    </div>
-  )
-}
-
-{/* MAP */ }
-{
-  activeView === 'MAP' && (
-    <div className="space-y-4">
-      <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">🗺️ PETA SEBARAN CCTV</h1></div>
-      <div className="relative w-full h-[calc(100vh-220px)] bg-slate-900 rounded-xl overflow-hidden border border-slate-700">
-        <Image src="/images/icon-map.jpg" alt="Peta" fill className="object-cover opacity-70" />
-        {mapMarkers.map((m) => <div key={m.id} className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10" style={{ top: m.top, left: m.left }} onMouseEnter={() => setHoveredMarker(m.id)} onMouseLeave={() => setHoveredMarker(null)}>{m.type === 'POST' ? <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-blue-400/50"><span className="text-2xl">🏢</span></div> : <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${m.status === 'WARNING' ? 'bg-red-600 animate-ping' : 'bg-emerald-600'}`}><span className="text-sm">📷</span></div>}{m.status === 'WARNING' && m.type === 'CCTV' && <div className="absolute inset-0 w-8 h-8 rounded-full bg-red-600 flex items-center justify-center"><span className="text-sm">📷</span></div>}{hoveredMarker === m.id && <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap shadow-xl z-20"><p className="font-bold">{m.name}</p><p className="text-slate-400">{m.location}</p></motion.div>}</div>)}
-        <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm rounded-xl p-4 text-white text-xs z-10"><p className="font-bold mb-2">KETERANGAN</p><div className="space-y-2"><div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-600 rounded-full"></div><span>Pos JPL</span></div><div className="flex items-center gap-2"><div className="w-4 h-4 bg-emerald-600 rounded-full"></div><span>CCTV Online</span></div><div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-600 rounded-full animate-pulse"></div><span>Warning</span></div></div></div>
-        <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl z-10 w-48"><h3 className="font-bold text-[#2D2A70] mb-3">📊 Status</h3><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-slate-600">Wilayah</span><span className="font-bold text-emerald-600">AMAN</span></div><div className="flex justify-between"><span className="text-slate-600">CCTV</span><span className="font-bold">{onlineCCTV}/{totalCCTV}</span></div></div></div>
-      </div>
-    </div>
-  )
-}
-
-{/* SETTINGS */ }
-{
-  activeView === 'SETTINGS' && (
-    <div className="space-y-6">
-      <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">⚙️ PENGATURAN SISTEM</h1><p className="text-slate-500 text-sm">Konfigurasi AI Engine, Alarm, dan Profil Operator</p></div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* SECTION 1: AI ENGINE */}
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h2 className="font-bold text-[#2D2A70] text-lg mb-4 flex items-center gap-2">🤖 Kalibrasi AI Engine</h2>
-
-          <div className="space-y-5">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Confidence Threshold: {aiThreshold}%</label>
-              <input type="range" min="0" max="100" value={aiThreshold} onChange={(e) => setAiThreshold(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#DA5525]" />
-              <p className="text-xs text-slate-500 mt-1">AI hanya membunyikan alarm jika keyakinan di atas nilai ini.</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Objek Deteksi</label>
-              <div className="space-y-2">
-                <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectMotor} onChange={(e) => setDetectMotor(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🏍️ Motor</span></label>
-                <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectMobil} onChange={(e) => setDetectMobil(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🚗 Mobil</span></label>
-                <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectManusia} onChange={(e) => setDetectManusia(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🚶 Manusia</span></label>
-                <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectHewan} onChange={(e) => setDetectHewan(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🐄 Hewan</span></label>
-              </div>
-            </div>
-
-            <button className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
-              🎯 Atur ROI (Zona Merah)
-            </button>
+      {/* COMMUNICATION */}
+      {
+        activeView === 'COMMUNICATION' && (<>
+          <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">📻 KOMUNIKASI RADIO</h1></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-220px)]">
+            <div className="lg:col-span-1 bg-slate-900 rounded-xl p-4"><h3 className="text-white font-bold mb-4">📡 Saluran</h3><div className="space-y-3"><div onClick={() => setActiveChannel('JPL_COORD')} className={`p-4 rounded-xl cursor-pointer ${activeChannel === 'JPL_COORD' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'}`}><span className="font-bold">JALUR 1</span></div><div onClick={() => setActiveChannel('STATION_REPORT')} className={`p-4 rounded-xl cursor-pointer ${activeChannel === 'STATION_REPORT' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-300'}`}><span className="font-bold">JALUR 2</span></div></div></div>
+            <div className="lg:col-span-2 bg-slate-800 rounded-xl flex flex-col overflow-hidden"><div className="bg-slate-900 px-4 py-3"><h3 className="text-white font-bold">{activeChannel === 'JPL_COORD' ? '📻 Koordinasi JPL' : '📻 Stasiun'}</h3></div><div className="flex-1 overflow-y-auto p-4 space-y-3">{currentMessages.map((msg) => <div key={msg.id} className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[75%] rounded-xl p-3 ${msg.isOwn ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-100'}`}><span className="text-xs font-bold">{msg.sender}</span><p className="text-sm">{msg.message}</p></div></div>)}</div><div className="bg-slate-900 p-4 flex items-center gap-4"><input type="text" value={textMessage} onChange={(e) => setTextMessage(e.target.value)} placeholder="Ketik..." className="flex-1 bg-slate-700 text-white px-4 py-3 rounded-xl text-sm" /><button onMouseDown={() => setIsTalking(true)} onMouseUp={() => setIsTalking(false)} className={`w-16 h-16 rounded-full flex items-center justify-center ${isTalking ? 'bg-red-600 scale-110' : 'bg-emerald-600'} text-white text-xl`}>{isTalking ? '📡' : '🎙️'}</button></div></div>
           </div>
-        </div>
+        </>)
+      }
 
-        {/* SECTION 2: SYSTEM & ALARM */}
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h2 className="font-bold text-[#2D2A70] text-lg mb-4 flex items-center gap-2">🔔 Sistem & Alarm</h2>
+      {/* TRAIN COMMS */}
+      {
+        activeView === 'TRAIN_COMMS' && (
+          <div className="space-y-4">
+            <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">🚆 KOMUNIKASI MASINIS</h1></div>
+            <div className="bg-slate-900 rounded-xl p-4 border border-slate-700 grid grid-cols-3 gap-4 items-center"><div><p className="text-emerald-400 font-mono text-sm">🟢 CONNECTED</p></div><div className="text-center"><p className="text-white font-black">KA 102 - ARGO WILIS</p></div><div className="text-right"><p className="text-emerald-400 font-mono text-xs">98%</p></div></div>
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 relative h-20"><div className="absolute top-1/2 left-0 right-0 h-2 bg-slate-600 rounded-full -translate-y-1/2"></div><motion.div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: `${trainPosition}%` }}><div className="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded mb-1 font-mono">{trainDistanceKm} KM</div><div className="text-2xl">🚆</div></motion.div></div>
+            <div className="grid grid-cols-3 gap-4"><button onClick={() => showCustomToast('📡 Reply: 24ms')} className="bg-blue-600 text-white p-6 rounded-xl text-center"><div className="text-3xl mb-2">📡</div><p className="font-black">PING</p></button><button onClick={() => showCustomToast('✅ AMAN dikirim')} className="bg-emerald-600 text-white p-6 rounded-xl text-center"><div className="text-3xl mb-2">✅</div><p className="font-black">AMAN</p></button><button onClick={() => setShowTrainStopModal(true)} className="bg-red-600 text-white p-6 rounded-xl text-center animate-pulse"><div className="text-3xl mb-2">⚠️</div><p className="font-black">DARURAT</p></button></div>
+          </div>
+        )
+      }
 
-          <div className="space-y-5">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Volume Sirine: {alarmVolume}%</label>
-              <input type="range" min="0" max="100" value={alarmVolume} onChange={(e) => setAlarmVolume(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#DA5525]" />
+      {/* SCHEDULE */}
+      {
+        activeView === 'SCHEDULE' && (
+          <div className="space-y-4">
+            <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">📅 JADWAL KERETA</h1></div>
+            <div className="flex items-center gap-4 bg-white rounded-xl p-3 border"><input type="text" placeholder="🔍 Cari..." value={scheduleSearch} onChange={(e) => setScheduleSearch(e.target.value)} className="flex-1 px-4 py-2 bg-slate-100 rounded-lg text-sm" /><div className="flex gap-2"><button onClick={() => setScheduleFilter('ALL')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'ALL' ? 'bg-[#2D2A70] text-white' : 'bg-slate-100'}`}>Semua</button><button onClick={() => setScheduleFilter('INCOMING')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'INCOMING' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Datang</button><button onClick={() => setScheduleFilter('LATE')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'LATE' ? 'bg-red-600 text-white' : 'bg-slate-100'}`}>Telat</button></div></div>
+            <div className="bg-white rounded-xl border overflow-hidden"><table className="w-full text-sm"><thead className="bg-[#2D2A70] text-white"><tr><th className="p-4 text-left">KA</th><th className="p-4 text-left">Tujuan</th><th className="p-4 text-left">Jadwal</th><th className="p-4 text-left">Status</th></tr></thead><tbody>{filteredSchedule.map((t, i) => <tr key={t.id} className={i % 2 === 0 ? '' : 'bg-slate-50'}><td className="p-4 font-bold text-[#2D2A70]">{t.noKA} - {t.nama}</td><td className="p-4">{t.tujuan}</td><td className="p-4 font-mono">{t.jadwal}</td><td className="p-4">{t.status === 'PASSED' ? <span className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-xs">✓</span> : t.status === 'INCOMING' ? <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs animate-pulse">🔵</span> : <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs">🔴</span>}</td></tr>)}</tbody></table></div>
+          </div>
+        )
+      }
+
+      {/* MAP */}
+      {
+        activeView === 'MAP' && (
+          <div className="space-y-4">
+            <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">🗺️ PETA SEBARAN CCTV</h1></div>
+            <div className="relative w-full h-[calc(100vh-220px)] bg-slate-900 rounded-xl overflow-hidden border border-slate-700">
+              <Image src="/images/icon-map.jpg" alt="Peta" fill className="object-cover opacity-70" />
+              {mapMarkers.map((m) => <div key={m.id} className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10" style={{ top: m.top, left: m.left }} onMouseEnter={() => setHoveredMarker(m.id)} onMouseLeave={() => setHoveredMarker(null)}>{m.type === 'POST' ? <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-blue-400/50"><span className="text-2xl">🏢</span></div> : <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${m.status === 'WARNING' ? 'bg-red-600 animate-ping' : 'bg-emerald-600'}`}><span className="text-sm">📷</span></div>}{m.status === 'WARNING' && m.type === 'CCTV' && <div className="absolute inset-0 w-8 h-8 rounded-full bg-red-600 flex items-center justify-center"><span className="text-sm">📷</span></div>}{hoveredMarker === m.id && <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap shadow-xl z-20"><p className="font-bold">{m.name}</p><p className="text-slate-400">{m.location}</p></motion.div>}</div>)}
+              <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm rounded-xl p-4 text-white text-xs z-10"><p className="font-bold mb-2">KETERANGAN</p><div className="space-y-2"><div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-600 rounded-full"></div><span>Pos JPL</span></div><div className="flex items-center gap-2"><div className="w-4 h-4 bg-emerald-600 rounded-full"></div><span>CCTV Online</span></div><div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-600 rounded-full animate-pulse"></div><span>Warning</span></div></div></div>
+              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl z-10 w-48"><h3 className="font-bold text-[#2D2A70] mb-3">📊 Status</h3><div className="space-y-2 text-sm"><div className="flex justify-between"><span className="text-slate-600">Wilayah</span><span className="font-bold text-emerald-600">AMAN</span></div><div className="flex justify-between"><span className="text-slate-600">CCTV</span><span className="font-bold">{onlineCCTV}/{totalCCTV}</span></div></div></div>
+            </div>
+          </div>
+        )
+      }
+
+      {/* SETTINGS */}
+      {
+        activeView === 'SETTINGS' && (
+          <div className="space-y-6">
+            <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">⚙️ PENGATURAN SISTEM</h1><p className="text-slate-500 text-sm">Konfigurasi AI Engine, Alarm, dan Profil Operator</p></div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* SECTION 1: AI ENGINE */}
+              <div className="bg-white rounded-xl border shadow-sm p-6">
+                <h2 className="font-bold text-[#2D2A70] text-lg mb-4 flex items-center gap-2">🤖 Kalibrasi AI Engine</h2>
+
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Confidence Threshold: {aiThreshold}%</label>
+                    <input type="range" min="0" max="100" value={aiThreshold} onChange={(e) => setAiThreshold(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#DA5525]" />
+                    <p className="text-xs text-slate-500 mt-1">AI hanya membunyikan alarm jika keyakinan di atas nilai ini.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Objek Deteksi</label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectMotor} onChange={(e) => setDetectMotor(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🏍️ Motor</span></label>
+                      <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectMobil} onChange={(e) => setDetectMobil(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🚗 Mobil</span></label>
+                      <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectManusia} onChange={(e) => setDetectManusia(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🚶 Manusia</span></label>
+                      <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" checked={detectHewan} onChange={(e) => setDetectHewan(e.target.checked)} className="w-4 h-4 accent-[#DA5525]" /><span className="text-sm">🐄 Hewan</span></label>
+                    </div>
+                  </div>
+
+                  <button className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    🎯 Atur ROI (Zona Merah)
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 2: SYSTEM & ALARM */}
+              <div className="bg-white rounded-xl border shadow-sm p-6">
+                <h2 className="font-bold text-[#2D2A70] text-lg mb-4 flex items-center gap-2">🔔 Sistem & Alarm</h2>
+
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Volume Sirine: {alarmVolume}%</label>
+                    <input type="range" min="0" max="100" value={alarmVolume} onChange={(e) => setAlarmVolume(Number(e.target.value))} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#DA5525]" />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div>
+                      <p className="font-bold text-sm text-[#2D2A70]">Auto-Recording</p>
+                      <p className="text-xs text-slate-500">Rekam otomatis saat bahaya</p>
+                    </div>
+                    <button onClick={() => setAutoRecord(!autoRecord)} className={`w-14 h-7 rounded-full transition-colors duration-200 ${autoRecord ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${autoRecord ? 'translate-x-8' : 'translate-x-1'}`}></div>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div>
+                      <p className="font-bold text-sm text-[#2D2A70]">Dark Theme</p>
+                      <p className="text-xs text-slate-500">Mode gelap untuk malam hari</p>
+                    </div>
+                    <button onClick={() => setDarkTheme(!darkTheme)} className={`w-14 h-7 rounded-full transition-colors duration-200 ${darkTheme ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${darkTheme ? 'translate-x-8' : 'translate-x-1'}`}></div>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Nomor WA Admin Stasiun</label>
+                    <input type="text" value={waNumber} onChange={(e) => setWaNumber(e.target.value)} className="w-full px-4 py-3 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#DA5525]" placeholder="08xxxxxxxxxx" />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: PROFILE */}
+              <div className="bg-white rounded-xl border shadow-sm p-6">
+                <h2 className="font-bold text-[#2D2A70] text-lg mb-4 flex items-center gap-2">👤 Profil Operator</h2>
+
+                <div className="space-y-5">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#2D2A70] to-[#1a1850] flex items-center justify-center text-white text-2xl font-black">AD</div>
+                    <div>
+                      <p className="font-bold text-[#2D2A70]">Ahmad Darmawan</p>
+                      <p className="text-sm text-slate-500">Operator JPL 305 - Ngembe</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+                    <div className="flex justify-between text-sm"><span className="text-slate-600">NIPP</span><span className="font-mono font-bold">1234567890</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-slate-600">Shift</span><span className="font-bold text-emerald-600">Pagi (07:00 - 15:00)</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-slate-600">DAOP</span><span className="font-bold">DAOP 7 - Madiun</span></div>
+                  </div>
+
+                  <button onClick={handleLogout} className="w-full py-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl transition flex items-center justify-center gap-2">
+                    🚪 LOGOUT
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-              <div>
-                <p className="font-bold text-sm text-[#2D2A70]">Auto-Recording</p>
-                <p className="text-xs text-slate-500">Rekam otomatis saat bahaya</p>
-              </div>
-              <button onClick={() => setAutoRecord(!autoRecord)} className={`w-14 h-7 rounded-full transition-colors duration-200 ${autoRecord ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${autoRecord ? 'translate-x-8' : 'translate-x-1'}`}></div>
+            {/* ACTION BAR */}
+            <div className="flex justify-end gap-4 pt-4 border-t">
+              <button onClick={handleResetSettings} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                🔄 Reset Default
+              </button>
+              <button onClick={handleSaveSettings} className="px-8 py-3 bg-[#DA5525] hover:bg-[#c44a1f] text-white font-black rounded-xl transition shadow-lg">
+                💾 SIMPAN PERUBAHAN
               </button>
             </div>
-
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-              <div>
-                <p className="font-bold text-sm text-[#2D2A70]">Dark Theme</p>
-                <p className="text-xs text-slate-500">Mode gelap untuk malam hari</p>
-              </div>
-              <button onClick={() => setDarkTheme(!darkTheme)} className={`w-14 h-7 rounded-full transition-colors duration-200 ${darkTheme ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${darkTheme ? 'translate-x-8' : 'translate-x-1'}`}></div>
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Nomor WA Admin Stasiun</label>
-              <input type="text" value={waNumber} onChange={(e) => setWaNumber(e.target.value)} className="w-full px-4 py-3 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#DA5525]" placeholder="08xxxxxxxxxx" />
-            </div>
           </div>
-        </div>
-
-        {/* SECTION 3: PROFILE */}
-        <div className="bg-white rounded-xl border shadow-sm p-6">
-          <h2 className="font-bold text-[#2D2A70] text-lg mb-4 flex items-center gap-2">👤 Profil Operator</h2>
-
-          <div className="space-y-5">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#2D2A70] to-[#1a1850] flex items-center justify-center text-white text-2xl font-black">AD</div>
-              <div>
-                <p className="font-bold text-[#2D2A70]">Ahmad Darmawan</p>
-                <p className="text-sm text-slate-500">Operator JPL 305 - Ngembe</p>
-              </div>
-            </div>
-
-            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-              <div className="flex justify-between text-sm"><span className="text-slate-600">NIPP</span><span className="font-mono font-bold">1234567890</span></div>
-              <div className="flex justify-between text-sm"><span className="text-slate-600">Shift</span><span className="font-bold text-emerald-600">Pagi (07:00 - 15:00)</span></div>
-              <div className="flex justify-between text-sm"><span className="text-slate-600">DAOP</span><span className="font-bold">DAOP 7 - Madiun</span></div>
-            </div>
-
-            <button onClick={handleLogout} className="w-full py-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl transition flex items-center justify-center gap-2">
-              🚪 LOGOUT
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ACTION BAR */}
-      <div className="flex justify-end gap-4 pt-4 border-t">
-        <button onClick={handleResetSettings} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
-          🔄 Reset Default
-        </button>
-        <button onClick={handleSaveSettings} className="px-8 py-3 bg-[#DA5525] hover:bg-[#c44a1f] text-white font-black rounded-xl transition shadow-lg">
-          💾 SIMPAN PERUBAHAN
-        </button>
-      </div>
-    </div>
-  )
-}
+        )
+      }
     </div >
   );
 }
