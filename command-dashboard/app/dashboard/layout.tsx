@@ -18,9 +18,14 @@ interface NotificationItem {
 }
 
 const mainMenuItems = [
-  { href: '/dashboard', label: 'Monitor Utama', icon: '📊' },
-  { href: '/dashboard/history', label: 'Riwayat Kejadian', icon: '📜' },
-  { href: '/dashboard/settings', label: 'Pengaturan', icon: '⚙️' },
+  { href: '/dashboard?menu=monitoring', icon: '🖥️', label: 'Monitor Utama' },
+  { href: '/dashboard?menu=analytics', icon: '📊', label: 'Analisis AI' },
+  { href: '/dashboard?menu=archive', icon: '📂', label: 'Arsip Bukti' },
+  { href: '/dashboard?menu=communication', icon: '📻', label: 'Radio Komando' },
+  { href: '/dashboard?menu=train', icon: '🚆', label: 'Komunikasi Masinis' },
+  { href: '/dashboard?menu=schedule', icon: '📅', label: 'Jadwal Kereta' },
+  { href: '/dashboard?menu=map', icon: '🗺️', label: 'Peta Wilayah' },
+  { href: '/dashboard?menu=settings', icon: '⚙️', label: 'Pengaturan' },
 ];
 
 const locations = [
@@ -103,11 +108,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <p className="text-[10px] text-slate-500 uppercase mb-3 font-bold tracking-widest px-4">Menu Utama</p>
             <div className="space-y-1">
               {mainMenuItems.map((item) => {
-                const isActive = pathname === item.href && !currentView;
+                // Extract menu param from href (e.g., "monitoring" from "/dashboard?menu=monitoring")
+                const itemMenu = item.href.includes('?menu=') ? item.href.split('?menu=')[1] : null;
+                const isActive = currentMenu === itemMenu || (pathname === '/dashboard' && item.href === '/dashboard?menu=monitoring' && !currentMenu);
                 return (
-                  <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${isActive ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-400' : 'text-slate-400 hover:bg-white/5 hover:text-white border-l-2 border-transparent'}`}>
+                  <Link key={item.href} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${isActive ? 'bg-blue-600/10 text-blue-400 border-l-2 border-blue-400 shadow-lg' : 'text-slate-400 hover:bg-white/5 hover:text-white border-l-2 border-transparent'}`}>
                     <span className="text-lg opacity-80">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <span className="text-sm">{item.label}</span>
                   </Link>
                 );
               })}
