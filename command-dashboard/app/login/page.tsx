@@ -88,7 +88,7 @@ export default function CinematicLoginPage() {
             <div className="relative bg-white rounded-2xl shadow-2xl p-4 border border-slate-200">
               <video
                 ref={videoRef}
-                src="/videos/video logo.mp4"
+                src="/videos/video%20logo.mp4"
                 autoPlay
                 muted
                 playsInline
