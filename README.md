@@ -112,7 +112,7 @@ Sistem menggunakan **Role-Based Access Control (RBAC)** dengan 3 level:
 ### Step 1: Start The Brain 🧠
 ```bash
 cd central-brain
-go run main.go
+go run .
 ```
 *Output: Server running on http://localhost:8080*
 
