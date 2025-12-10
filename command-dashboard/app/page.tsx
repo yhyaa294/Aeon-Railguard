@@ -153,7 +153,7 @@ export default function LandingPage() {
           {/* HERO */}
           <section className="relative h-screen flex flex-col items-center justify-center text-center">
             <div className="absolute inset-0 z-0">
-              <Image src="/images/gambar kereta landing page hal 1.png" alt="Hero" fill className="object-cover" priority />
+              <Image src="/images/hero-bg.jpg" alt="Hero" fill className="object-cover" priority />
               <div className="absolute inset-0 bg-black/30"></div>
             </div>
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.3 }} className="relative z-10 px-6">
@@ -393,7 +393,7 @@ export default function LandingPage() {
               </motion.div>
               <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }} className="relative mx-auto">
                 <div className="rounded-3xl overflow-hidden border-4 border-[#2D2A70] shadow-2xl">
-                  <Image src="/images/dashboard.png" alt="Command Center Map" width={1200} height={600} className="w-full h-auto" />
+                  <Image src="/images/feed-street.jpg" alt="Command Center Map" width={1200} height={600} className="w-full h-auto" />
                 </div>
               </motion.div>
             </div>

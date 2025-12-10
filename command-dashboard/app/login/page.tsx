@@ -153,7 +153,7 @@ export default function CinematicLoginPage() {
             <div className="hidden lg:flex w-1/2 relative overflow-hidden">
               {/* Background Image */}
               <img
-                src="/images/stasiun.png"
+                src="/images/feed-track.jpg"
                 alt="Station Background"
                 className="w-full h-full object-cover"
               />
