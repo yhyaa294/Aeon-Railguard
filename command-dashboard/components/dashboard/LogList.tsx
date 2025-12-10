@@ -10,36 +10,37 @@ interface LogEntry {
 
 interface LogListProps {
     logs: LogEntry[];
+    onLogClick?: (log: LogEntry) => void;
 }
 
 const typeStyles = {
     info: {
-        bg: 'bg-blue-50',
+        bg: 'bg-blue-50 hover:bg-blue-100',
         border: 'border-l-blue-500',
         text: 'text-blue-700',
         icon: 'ℹ️',
     },
     warning: {
-        bg: 'bg-amber-50',
+        bg: 'bg-amber-50 hover:bg-amber-100',
         border: 'border-l-amber-500',
         text: 'text-amber-700',
         icon: '⚠️',
     },
     danger: {
-        bg: 'bg-red-50',
+        bg: 'bg-red-50 hover:bg-red-100',
         border: 'border-l-red-500',
         text: 'text-red-700',
         icon: '🚨',
     },
     success: {
-        bg: 'bg-emerald-50',
+        bg: 'bg-emerald-50 hover:bg-emerald-100',
         border: 'border-l-emerald-500',
         text: 'text-emerald-700',
         icon: '✓',
     },
 };
 
-export default function LogList({ logs }: LogListProps) {
+export default function LogList({ logs, onLogClick }: LogListProps) {
     return (
         <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
             {/* Header */}
@@ -67,9 +68,11 @@ export default function LogList({ logs }: LogListProps) {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
+                                onClick={() => onLogClick?.(log)}
                                 className={`
                   ${style.bg} ${style.border} border-l-4 
-                  rounded-r-lg p-3 hover:shadow-md transition-shadow
+                  rounded-r-lg p-3 cursor-pointer
+                  hover:shadow-md transition-all transform hover:scale-[1.02]
                 `}
                             >
                                 <div className="flex items-start gap-2">
@@ -78,10 +81,14 @@ export default function LogList({ logs }: LogListProps) {
                                         <p className={`text-sm font-medium ${style.text} truncate`}>
                                             {log.message}
                                         </p>
-                                        <p className="text-xs text-slate-500 mt-1 font-mono">
-                                            {log.time}
-                                        </p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <p className="text-xs text-slate-500 font-mono">
+                                                {log.time}
+                                            </p>
+                                            <span className="text-xs text-slate-400">• Klik untuk detail</span>
+                                        </div>
                                     </div>
+                                    <span className="text-slate-400 text-sm">→</span>
                                 </div>
                             </motion.div>
                         );
@@ -91,7 +98,7 @@ export default function LogList({ logs }: LogListProps) {
 
             {/* Footer */}
             <div className="bg-slate-50 px-4 py-2 border-t text-xs text-slate-500 text-center">
-                Auto-refresh setiap 1 detik
+                Klik log untuk melihat bukti visual
             </div>
         </div>
     );

@@ -54,13 +54,11 @@ export default function LandingPage() {
   // ========= DASHBOARD TRANSITION =========
   const handleDashboardClick = () => {
     setIsTransitioning(true);
+    // Direct redirect after brief animation delay
+    setTimeout(() => {
+      router.push('/login');
+    }, 500);
   };
-
-  useEffect(() => {
-    if (isTransitioning && loadingVideoRef.current) {
-      loadingVideoRef.current.play().catch((e) => console.error('Loading video failed:', e));
-    }
-  }, [isTransitioning]);
 
   const handleLoadingVideoEnd = () => {
     router.push('/login');

@@ -1,145 +1,116 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, MapPin, Lock, Shield, ArrowRight, Loader2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { User, Lock, ChevronDown, Building2, MapPin, Shield, Train, Loader2, KeyRound } from 'lucide-react';
 
-export default function CinematicLoginPage() {
+// ========= HARDCODED DATA =========
+const daopOptions = [
+  { id: 'DAOP7', name: 'DAOP 7 - Madiun' },
+];
+
+const stasiunOptions = [
+  { id: 'PTRN', name: 'Stasiun Peterongan', daopId: 'DAOP7' },
+];
+
+const jplOptions = [
+  { id: 'JPL-102', name: 'JPL 102 - Kebun Melati' },
+  { id: 'JPL-201', name: 'JPL 201 - Sumbermulyo' },
+  { id: 'JPL-305', name: 'JPL 305 - Ngembe' },
+  { id: 'JPL-410', name: 'JPL 410 - Rejoso' },
+];
+
+type RoleType = 'admin' | 'operator' | null;
+
+export default function HierarchyLoginPage() {
   const router = useRouter();
 
-  // Video intro state
-  const [showIntro, setShowIntro] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Form state
-  const [namaLengkap, setNamaLengkap] = useState('');
-  const [email, setEmail] = useState('');
-  const [idStasiun, setIdStasiun] = useState('');
+  // ========= FORM STATE =========
+  const [selectedDaop, setSelectedDaop] = useState('');
+  const [selectedStasiun, setSelectedStasiun] = useState('');
+  const [selectedRole, setSelectedRole] = useState<RoleType>(null);
+  const [selectedJpl, setSelectedJpl] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [kodeOtoritas, setKodeOtoritas] = useState('');
+  const [authCode, setAuthCode] = useState('');
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [showIntro, setShowIntro] = useState(true);
 
-  // Detect DAOP from station ID
-  const detectedDaop = idStasiun.toUpperCase().startsWith('JBG') ? 'DAOP 7 MADIUN' :
-    idStasiun.toUpperCase().startsWith('SMT') ? 'DAOP 4 SEMARANG' :
-      idStasiun.toUpperCase().startsWith('SBI') ? 'DAOP 8 SURABAYA' :
-        idStasiun.toUpperCase().startsWith('BD') ? 'DAOP 2 BANDUNG' :
-          idStasiun.toUpperCase().startsWith('YK') ? 'DAOP 6 YOGYAKARTA' :
-            null;
-
-  // Handle video end or error - skip intro
-  const handleVideoEnd = () => {
-    setShowIntro(false);
-  };
-
-  const handleVideoError = () => {
-    setShowIntro(false);
-  };
-
-  // Fallback timeout: skip intro after 10 seconds
+  // ========= AUTO SKIP INTRO =========
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (showIntro) {
-        setShowIntro(false);
-      }
-    }, 10000);
-    return () => clearTimeout(timeout);
-  }, [showIntro]);
+    const timer = setTimeout(() => setShowIntro(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Handle form submission (Demo Mode - No real authentication)
+  // ========= FORM VALIDATION =========
+  const isFormValid = 
+    selectedDaop && 
+    selectedStasiun && 
+    selectedRole && 
+    (selectedRole === 'admin' || (selectedRole === 'operator' && selectedJpl)) &&
+    username && 
+    password &&
+    authCode;
+
+  // ========= HANDLE LOGIN =========
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    if (!isFormValid) return;
+
     setIsLoading(true);
 
-    // Simulate loading for demo effect
+    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // Demo mode: Accept any credentials
-    console.log('Login attempt:', { namaLengkap, email, idStasiun, kodeOtoritas });
+    // Store user session to localStorage
+    const userSession = {
+      daop: daopOptions.find(d => d.id === selectedDaop)?.name || selectedDaop,
+      stasiun: stasiunOptions.find(s => s.id === selectedStasiun)?.name || selectedStasiun,
+      role: selectedRole,
+      jpl: selectedRole === 'operator' ? jplOptions.find(j => j.id === selectedJpl)?.name : null,
+      jplId: selectedRole === 'operator' ? selectedJpl : null,
+      username,
+      loginTime: new Date().toISOString(),
+    };
 
-    // Store user info in localStorage for demo
-    localStorage.setItem('aeon_user', JSON.stringify({
-      nama: namaLengkap,
-      email: email,
-      stasiun: idStasiun,
-      daop: detectedDaop || 'DAOP 7 MADIUN'
-    }));
-
+    localStorage.setItem('aeon_session', JSON.stringify(userSession));
+    
     setIsLoading(false);
     router.push('/dashboard');
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-slate-900">
+    <div className="relative min-h-screen w-full overflow-hidden">
+      {/* Background */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-[#2D2A70] via-[#1a1850] to-[#0f0d30]" />
 
-      {/* === VIDEO INTRO OVERLAY (WHITE BACKGROUND) === */}
+      {/* ========= INTRO OVERLAY ========= */}
       <AnimatePresence>
         {showIntro && (
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1, ease: 'easeInOut' }}
+            transition={{ duration: 0.8 }}
             className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center"
           >
-            {/* Animated Logo Container */}
-            <div className="relative bg-white rounded-2xl shadow-2xl p-8 border border-slate-200">
-              <motion.img
-                src="/images/logo Aeon.png"
-                alt="Aeon Logo"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{
-                  scale: [1, 1.1, 1],
-                  opacity: 1
-                }}
-                transition={{
-                  scale: { repeat: Infinity, duration: 1.5, ease: "easeInOut" },
-                  opacity: { duration: 0.5 }
-                }}
-                onAnimationStart={() => {
-                  // Auto proceed to login after 2.5 seconds
-                  setTimeout(handleVideoEnd, 2500);
-                }}
-                className="w-32 h-32 object-contain"
-              />
-            </div>
-
-            {/* Loading Text Below Video */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-8 text-center w-80"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
             >
-              <h2 className="text-2xl font-bold text-[#2D2A70] mb-2">AEON RAILGUARD</h2>
-              <p className="text-slate-500 text-sm mb-4">Sistem Keamanan Perlintasan Kereta Api</p>
-
-              {/* Loading Progress */}
-              <div className="flex items-center justify-center gap-3 text-[#DA5525] mb-4">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm font-medium">Memuat Sistem...</span>
-              </div>
-
-              {/* Loading Bar - Animated 0% to 100% */}
-              <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 5, ease: 'linear' }}
-                  className="h-full bg-gradient-to-r from-[#DA5525] to-orange-400 rounded-full"
-                />
-              </div>
-
-              {/* Version */}
-              <p className="text-slate-400 text-xs mt-4 font-mono">v2.0.0 | Command Center</p>
+              <Image src="/images/logo Aeon.png" alt="Aeon" width={120} height={120} />
             </motion.div>
-
-            {/* Skip Button */}
-            <button
-              onClick={handleVideoEnd}
-              className="absolute bottom-8 right-8 px-4 py-2 bg-[#2D2A70] hover:bg-[#3d3a80] text-white text-sm font-medium rounded-lg transition-all shadow-lg"
+            <h2 className="text-2xl font-bold text-[#2D2A70] mt-6">AEON RAILGUARD</h2>
+            <p className="text-slate-500 text-sm mt-2">Sistem Keamanan Perlintasan Kereta Api</p>
+            <div className="flex items-center gap-2 text-[#DA5525] mt-6">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">Memuat...</span>
+            </div>
+            <button 
+              onClick={() => setShowIntro(false)}
+              className="mt-8 text-sm text-slate-400 hover:text-[#DA5525] transition"
             >
               Skip Intro →
             </button>
@@ -147,242 +118,292 @@ export default function CinematicLoginPage() {
         )}
       </AnimatePresence>
 
-      {/* === MAIN LOGIN INTERFACE === */}
-      <AnimatePresence>
-        {!showIntro && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="flex min-h-screen w-full"
-          >
-
-            {/* LEFT SIDE: Station Image */}
-            <div className="hidden lg:flex w-1/2 relative overflow-hidden">
-              {/* Background Image */}
-              <img
-                src="/images/stasiun.png"
-                alt="Station Background"
-                className="w-full h-full object-cover"
-              />
-              {/* Dark Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 to-slate-900/40" />
-
-              {/* Branding Content */}
-              <div className="absolute inset-0 flex flex-col justify-end p-12">
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.8 }}
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <ShieldCheck className="w-10 h-10 text-[#F6841F]" />
-                    <span className="text-white/60 text-sm font-medium tracking-wider">SISTEM KEAMANAN TERPADU</span>
-                  </div>
-                  <h2 className="text-4xl font-bold text-white mb-4 leading-tight">
-                    Keamanan &<br />Efisiensi Maksimal
-                  </h2>
-                  <p className="text-white/80 text-lg max-w-md">
-                    Sistem pemantauan AI terpadu untuk keselamatan perlintasan kereta api Indonesia.
-                  </p>
-                </motion.div>
+      {/* ========= MAIN CONTENT: SPLIT LAYOUT ========= */}
+      <div className="relative z-10 min-h-screen flex">
+        
+        {/* LEFT SIDE: Info & Image */}
+        <div className="hidden lg:flex w-1/2 flex-col justify-center items-center p-12 relative">
+          {/* Background Image */}
+          <div className="absolute inset-0">
+            <Image 
+              src="/images/stasiun.png" 
+              alt="Stasiun" 
+              fill 
+              className="object-cover opacity-30"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#2D2A70]/80 to-transparent" />
+          </div>
+          
+          {/* Content */}
+          <div className="relative z-10 max-w-md text-white">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="bg-white rounded-2xl p-3 shadow-lg">
+                <Image src="/images/logo Aeon.png" alt="Aeon" width={50} height={50} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-black tracking-tight">AEON</h1>
+                <p className="text-[#DA5525] font-bold text-sm">RAILGUARD</p>
               </div>
             </div>
+            
+            <h2 className="text-4xl font-black leading-tight mb-6">
+              Sistem Pemantauan<br />
+              <span className="text-[#DA5525]">Perlintasan Kereta Api</span>
+            </h2>
+            
+            <p className="text-white/80 leading-relaxed mb-8">
+              Platform monitoring berbasis AI untuk pengawasan perlintasan sebidang dan jalur ilegal. 
+              Mendeteksi objek secara real-time dan mengirim sinyal darurat ke lokomotif dalam hitungan milidetik.
+            </p>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#DA5525]/20 rounded-lg flex items-center justify-center text-[#DA5525]">🎯</div>
+                <div>
+                  <p className="font-bold">Deteksi Real-Time</p>
+                  <p className="text-sm text-white/60">YOLOv8 dengan inferensi &lt;50ms</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#DA5525]/20 rounded-lg flex items-center justify-center text-[#DA5525]">🚨</div>
+                <div>
+                  <p className="font-bold">Sinyal Darurat</p>
+                  <p className="text-sm text-white/60">Kirim stop signal ke lokomotif</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#DA5525]/20 rounded-lg flex items-center justify-center text-[#DA5525]">📊</div>
+                <div>
+                  <p className="font-bold">Multi-Location</p>
+                  <p className="text-sm text-white/60">Pantau banyak titik sekaligus</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            {/* RIGHT SIDE: Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 bg-white">
-              <div className="w-full max-w-md space-y-8">
-
-                {/* Header: Logos */}
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex flex-col items-center justify-center gap-4"
-                >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src="/images/logo%20Aeon.png"
-                      alt="Aeon Logo"
-                      className="h-10 w-auto object-contain"
-                    />
-                    <div className="h-8 w-px bg-slate-300" />
-                    <img
-                      src="/images/logo%20kai.jpg"
-                      alt="KAI Logo"
-                      className="h-10 w-auto object-contain mix-blend-multiply"
-                    />
+        {/* RIGHT SIDE: Login Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="w-full max-w-md"
+          >
+            {/* Card */}
+            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+              
+              {/* Header */}
+              <div className="bg-gradient-to-r from-[#2D2A70] to-[#1a1850] p-6 text-center lg:hidden">
+                <div className="flex justify-center mb-3">
+                  <div className="bg-white rounded-2xl p-2 shadow-lg">
+                    <Image src="/images/logo Aeon.png" alt="Aeon" width={40} height={40} />
                   </div>
+                </div>
+                <h1 className="text-xl font-black text-white">MASUK SISTEM</h1>
+              </div>
+              
+              <div className="hidden lg:block p-6 border-b">
+                <h1 className="text-2xl font-black text-[#2D2A70]">Masuk Sistem</h1>
+                <p className="text-slate-500 text-sm mt-1">Command Center - Aeon RailGuard</p>
+              </div>
 
-                  {/* ERROR MESSAGE */}
-                  {errorMsg && (
-                    <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2 rounded-lg text-sm font-bold border border-red-200">
-                      <AlertCircle className="w-4 h-4" />
-                      {errorMsg}
-                    </div>
-                  )}
-                </motion.div>
-
-                {/* Title */}
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="text-center"
-                >
-                  <h1 className="text-2xl font-bold text-slate-800">Portal Otentikasi</h1>
-                  <p className="text-slate-500 text-sm mt-1">Masukkan kredensial untuk mengakses Command Dashboard</p>
-                </motion.div>
-
-                {/* Form */}
-                <motion.form
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  onSubmit={handleLogin}
-                  className="space-y-5"
-                >
-                  {/* Nama Lengkap */}
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <User className="w-4 h-4 text-slate-400" />
-                      Nama Lengkap Petugas
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      className="block w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2D3588] focus:border-transparent transition-all"
-                      placeholder="Masukkan nama lengkap"
-                      value={namaLengkap}
-                      onChange={(e) => setNamaLengkap(e.target.value)}
-                    />
+              {/* Form */}
+              <form onSubmit={handleLogin} className="p-6 space-y-4">
+                
+                {/* LEVEL 1: DAOP */}
+                <div>
+                  <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-1.5 uppercase tracking-wider">
+                    <Building2 size={14} />
+                    Daerah Operasi
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedDaop}
+                      onChange={(e) => {
+                        setSelectedDaop(e.target.value);
+                        setSelectedStasiun('');
+                        setSelectedRole(null);
+                        setSelectedJpl('');
+                      }}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#DA5525] text-sm"
+                    >
+                      <option value="">-- Pilih DAOP --</option>
+                      {daopOptions.map((d) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                   </div>
+                </div>
 
-                  {/* Email Kedinasan */}
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-slate-400" />
-                      Email Kedinasan
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      className="block w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2D3588] focus:border-transparent transition-all"
-                      placeholder="nama.petugas@kai.id"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-
-                  {/* ID Stasiun with DAOP Detection */}
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-slate-400" />
-                      ID Stasiun
+                {/* LEVEL 2: STASIUN */}
+                {selectedDaop && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-1.5 uppercase tracking-wider">
+                      <Train size={14} />
+                      Stasiun Induk
                     </label>
                     <div className="relative">
+                      <select
+                        value={selectedStasiun}
+                        onChange={(e) => {
+                          setSelectedStasiun(e.target.value);
+                          setSelectedRole(null);
+                          setSelectedJpl('');
+                        }}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#DA5525] text-sm"
+                      >
+                        <option value="">-- Pilih Stasiun --</option>
+                        {stasiunOptions.filter(s => s.daopId === selectedDaop).map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* LEVEL 3: ROLE */}
+                {selectedStasiun && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-2 uppercase tracking-wider">
+                      <Shield size={14} />
+                      Peran Anda
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedRole('admin'); setSelectedJpl(''); }}
+                        className={`p-3 rounded-lg border-2 text-center transition-all text-sm ${
+                          selectedRole === 'admin' 
+                            ? 'border-[#DA5525] bg-[#DA5525]/10 text-[#DA5525]' 
+                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                        }`}
+                      >
+                        <div className="text-xl mb-1">🏢</div>
+                        <div className="font-bold text-xs">Admin Stasiun</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRole('operator')}
+                        className={`p-3 rounded-lg border-2 text-center transition-all text-sm ${
+                          selectedRole === 'operator' 
+                            ? 'border-[#DA5525] bg-[#DA5525]/10 text-[#DA5525]' 
+                            : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                        }`}
+                      >
+                        <div className="text-xl mb-1">🚦</div>
+                        <div className="font-bold text-xs">Operator JPL</div>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* LEVEL 4: JPL */}
+                {selectedRole === 'operator' && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                    <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-1.5 uppercase tracking-wider">
+                      <MapPin size={14} />
+                      Pos Penjagaan
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedJpl}
+                        onChange={(e) => setSelectedJpl(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#DA5525] text-sm"
+                      >
+                        <option value="">-- Pilih Pos JPL --</option>
+                        {jplOptions.map((j) => (
+                          <option key={j.id} value={j.id}>{j.name}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* CREDENTIALS */}
+                {(selectedRole === 'admin' || (selectedRole === 'operator' && selectedJpl)) && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="space-y-3 pt-3 border-t border-slate-200">
+                    {/* Username */}
+                    <div>
+                      <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-1.5 uppercase tracking-wider">
+                        <User size={14} />
+                        Username / NIPP
+                      </label>
                       <input
                         type="text"
-                        required
-                        className="block w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2D3588] focus:border-transparent transition-all uppercase"
-                        placeholder="Cth: JBG-001"
-                        value={idStasiun}
-                        onChange={(e) => setIdStasiun(e.target.value)}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Masukkan username"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DA5525] text-sm"
                       />
-                      {/* DAOP Detection Badge */}
-                      <AnimatePresence>
-                        {detectedDaop && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2"
-                          >
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                              ✓ {detectedDaop}
-                            </span>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
-                  </div>
 
-                  {/* Kata Sandi */}
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <Lock className="w-4 h-4 text-slate-400" />
-                      Kata Sandi
-                    </label>
-                    <input
-                      type="password"
-                      required
-                      className="block w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2D3588] focus:border-transparent transition-all"
-                      placeholder="••••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
+                    {/* Password */}
+                    <div>
+                      <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-1.5 uppercase tracking-wider">
+                        <Lock size={14} />
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Masukkan password"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DA5525] text-sm"
+                      />
+                    </div>
 
-                  {/* Kode Otoritas */}
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-slate-400" />
-                      Kode Otoritas
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      className="block w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2D3588] focus:border-transparent transition-all font-mono tracking-wider"
-                      placeholder="AUTH-XXXX-XXXX"
-                      value={kodeOtoritas}
-                      onChange={(e) => setKodeOtoritas(e.target.value)}
-                    />
-                  </div>
+                    {/* Auth Code */}
+                    <div>
+                      <label className="flex items-center gap-2 text-xs font-bold text-[#2D2A70] mb-1.5 uppercase tracking-wider">
+                        <KeyRound size={14} />
+                        Kode Autentifikasi
+                      </label>
+                      <input
+                        type="text"
+                        value={authCode}
+                        onChange={(e) => setAuthCode(e.target.value.toUpperCase())}
+                        placeholder="Masukkan 6-digit kode"
+                        maxLength={6}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#DA5525] text-sm font-mono tracking-widest text-center"
+                      />
+                      <p className="text-xs text-slate-400 mt-1 text-center">Kode dikirim via WhatsApp ke nomor terdaftar</p>
+                    </div>
 
-                  {/* Submit Button */}
-                  <motion.button
-                    type="submit"
-                    disabled={isLoading}
-                    whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                    whileTap={{ scale: isLoading ? 1 : 0.98 }}
-                    className="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-lg font-bold text-white bg-gradient-to-r from-[#2D3588] to-[#1a2055] hover:from-[#3a45a0] hover:to-[#2D3588] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2D3588] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Scanning Biometrics...
-                      </>
-                    ) : (
-                      <>
-                        Verifikasi & Masuk
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </motion.button>
-                </motion.form>
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={!isFormValid || isLoading}
+                      className={`w-full py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 mt-4 ${
+                        isFormValid && !isLoading
+                          ? 'bg-gradient-to-r from-[#DA5525] to-[#c44a1f] hover:shadow-lg hover:scale-[1.02]'
+                          : 'bg-slate-300 cursor-not-allowed'
+                      }`}
+                    >
+                      {isLoading ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> MEMVERIFIKASI...</>
+                      ) : (
+                        <>🚀 MASUK SISTEM</>
+                      )}
+                    </button>
+                  </motion.div>
+                )}
 
-                {/* Footer Security Badge */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
-                  className="text-center pt-6 border-t border-slate-100"
-                >
-                  <div className="inline-flex items-center gap-2 text-xs text-slate-400">
-                    <Lock className="w-3 h-3" />
-                    256-bit SSL Encrypted Connection
-                  </div>
-                  <div className="text-xs text-slate-300 mt-2">
-                    &copy; 2025 AEON RailGuard × PT Kereta Api Indonesia
-                  </div>
-                </motion.div>
+              </form>
 
+              {/* Footer */}
+              <div className="bg-slate-50 px-6 py-3 border-t text-center">
+                <p className="text-xs text-slate-500">
+                  © 2026 <span className="font-bold text-[#DA5525]">GenZ AI</span> • Aeon RailGuard
+                </p>
               </div>
             </div>
-
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
