@@ -212,7 +212,7 @@ export default function LandingPage() {
               <div className="grid md:grid-cols-3 gap-8">
                 <SolutionCard icon={<Eye size={36} />} title="Multimodal Vision" description="Gabungan kamera Thermal dan RGB untuk deteksi akurat di segala cuaca. Sistem mampu mendeteksi objek di malam hari dan cuaca ekstrem berkat dual-mode imaging." delay={0.1} />
                 <SolutionCard icon={<Radio size={36} />} title="Smart Grid" description="Sistem terintegrasi dengan IoT dan palang pintu otomatis. Dashboard monitoring real-time memungkinkan operator melihat kondisi semua perlintasan dari satu tempat." delay={0.2} />
-                <SolutionCard icon={<Shield size={36} />} title="Hardware Mandiri" description="Unit lapangan dirancang dengan panel surya dan konstruksi anti-vandal. Siap beroperasi di area terpencil tanpa infrastruktur listrik konvensional." delay={0.3} />
+                <SolutionCard icon={<Shield size={36} />} title="⏳ Rencana: Sentinel Unit" description="Pengembangan hardware IoT tangguh dengan panel surya dan konstruksi anti-vandal. Ini adalah roadmap ekspansi kami setelah pendanaan, untuk mendukung operasi di area terpencil tanpa listrik." delay={0.3} />
               </div>
             </div>
           </section>

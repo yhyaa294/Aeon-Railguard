@@ -127,6 +127,7 @@ export default function DashboardPage() {
   const [scheduleSearch, setScheduleSearch] = useState('');
   const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>('ALL');
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
+  const [isStreamActive, setIsStreamActive] = useState(true);
 
   // Settings State
   const [aiThreshold, setAiThreshold] = useState(75);
@@ -237,7 +238,20 @@ export default function DashboardPage() {
       {/* MONITORING */}
       {activeView === 'MONITORING' && (<>
         <div className="mb-4">
-          <h1 className="text-xl font-black text-[#2D2A70]">🖥️ JPL 305 - NGEMBE</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-black text-[#2D2A70]">🖥️ JPL 305 - NGEMBE</h1>
+            {/* FEED TOGGLE SWITCH */}
+            <button
+              onClick={() => setIsStreamActive(!isStreamActive)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 ${isStreamActive
+                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600'
+                : 'bg-slate-400 text-white hover:bg-slate-500'
+                }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-white animate-pulse' : 'bg-slate-300'}`}></span>
+              {isStreamActive ? '● LIVE FEED ON' : '○ FEED OFF'}
+            </button>
+          </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${wsConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
               WS {wsConnected ? 'TERHUBUNG' : 'PUTUS'}
@@ -257,7 +271,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-4">
             {cameraPoints.map((c) => (
               <div key={c.id} onClick={() => setActiveTab(c.id)} className="bg-slate-900 rounded-xl overflow-hidden cursor-pointer relative aspect-video border border-white/10">
-                <MediaPlayer media={c.media} danger={isDanger && (!dangerCameraId || dangerCameraId === c.id)} />
+                <MediaPlayer media={c.media} danger={isDanger && (!dangerCameraId || dangerCameraId === c.id)} disabled={!isStreamActive} />
                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 flex justify-between">
                   <span className="text-white font-bold text-sm">{c.name}</span>
                   <span className={`px-2 py-0.5 rounded text-xs font-bold ${c.status === 'AMAN' ? 'bg-emerald-500' : 'bg-amber-500'} text-white`}>{c.status}</span>
@@ -274,7 +288,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-3 gap-4">
             {/* VIDEO WITH TACTICAL CONTROL DECK */}
             <div className="col-span-2 bg-slate-950 rounded-xl overflow-hidden relative aspect-video border border-white/10">
-              <MediaPlayer media={selectedCamera?.media} danger={isDanger && (!dangerCameraId || dangerCameraId === selectedCamera?.id)} />
+              <MediaPlayer media={selectedCamera?.media} danger={isDanger && (!dangerCameraId || dangerCameraId === selectedCamera?.id)} disabled={!isStreamActive} />
 
               {/* AEON Watermark */}
               <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
@@ -531,7 +545,7 @@ export default function DashboardPage() {
 
                       <div className="col-span-1 space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
+                          <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
                             <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">Confidence</p>
                             <p className="text-3xl font-black text-emerald-400">
                               {isLatestForSelected && latestConfidencePct ? `${latestConfidencePct}%` : `${cameraPoints.find(c => c.id === activeTab)?.confidence}%`}
@@ -766,7 +780,28 @@ export default function DashboardPage() {
   );
 }
 
-const MediaPlayer = ({ media, autoPlay = true, muted = true, danger = false }: { media?: MediaSource; autoPlay?: boolean; muted?: boolean; danger?: boolean }) => {
+const MediaPlayer = ({ media, autoPlay = true, muted = true, danger = false, disabled = false }: { media?: MediaSource; autoPlay?: boolean; muted?: boolean; danger?: boolean; disabled?: boolean }) => {
+  if (disabled) {
+    return (
+      <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center overflow-hidden">
+        {/* Scanline Effect */}
+        <div className="absolute inset-0 pointer-events-none opacity-20" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+          animation: 'scanline 8s linear infinite'
+        }}></div>
+        {/* Static Noise Overlay */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")'
+        }}></div>
+        {/* Icon & Text */}
+        <div className="relative z-10 text-center">
+          <div className="text-6xl mb-4 opacity-30">📵</div>
+          <p className="text-slate-400 font-bold text-sm tracking-widest">SYSTEM STANDBY</p>
+          <p className="text-slate-600 text-xs mt-1">FEED DISABLED</p>
+        </div>
+      </div>
+    );
+  }
   if (!media) {
     return <div className="absolute inset-0 bg-slate-900 flex items-center justify-center text-slate-500 text-xs">Media tidak tersedia</div>;
   }
