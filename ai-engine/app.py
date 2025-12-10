@@ -19,9 +19,11 @@ from datetime import datetime
 from ultralytics import YOLO
 
 # --- CONFIGURATION ---
-BRAIN_URL = "http://localhost:8080/api/incident"
+BRAIN_URL = "http://localhost:8080/api/internal/push"
+STREAM_URL = "http://localhost:8080/api/internal/stream/cam1"
+ENABLE_STREAM = True
 ALERT_THRESHOLD_SECONDS = 3.0
-CONFIDENCE_THRESHOLD = 0.45
+CONFIDENCE_THRESHOLD = 0.60
 # Default ByteTrack config bundled with ultralytics
 DEFAULT_TRACKER = "bytetrack.yaml"
 
@@ -40,8 +42,11 @@ class AIEngine:
         zone_path: str = "danger_zone.json",
         evidence_dir: str = "evidence",
         tracker_config: str | None = DEFAULT_TRACKER,
+        enable_stream: bool = ENABLE_STREAM,
     ):
         self.source = source
+        self.enable_display = False
+        self.enable_stream = enable_stream
         print(f"[INIT] Loading YOLO model: {model_path}")
         self.model = YOLO(model_path)
         self.tracker_config = tracker_config
@@ -56,6 +61,8 @@ class AIEngine:
         
         # Dictionary: {track_id: last_alert_time} to prevent spam
         self.alert_cooldowns = {}
+        self.last_frame_push = 0.0
+        self.frame_push_interval = 0.1  # seconds between stream pushes
         
         # Danger classes (COCO indices)
         # 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
@@ -126,6 +133,7 @@ class AIEngine:
             "in_roi": True,
             "object_id": int(obj_id),
             "duration_seconds": float(duration),
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
         
         # Save evidence regardless of network status
@@ -136,6 +144,29 @@ class AIEngine:
             requests.post(BRAIN_URL, json=payload, timeout=2)
         except Exception as e:
             print(f"[ERROR] Failed to send alert: {e}")
+
+    def push_frame_stream(self, frame):
+        """Send JPEG frame to Go MJPEG endpoint (throttled)."""
+        if not self.enable_stream:
+            return
+        now = time.time()
+        if now - self.last_frame_push < self.frame_push_interval:
+            return
+        self.last_frame_push = now
+        try:
+            ok, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            if not ok:
+                return
+            # short timeout to avoid blocking when backend down
+            requests.post(
+                STREAM_URL,
+                data=buffer.tobytes(),
+                headers={"Content-Type": "image/jpeg"},
+                timeout=0.3,
+            )
+        except Exception as e:
+            # log once in a while could be added; keep quiet to avoid spam
+            return
 
     def run(self):
         print(f"[RUN] Starting AI Engine on source: {self.source}")
@@ -210,7 +241,8 @@ class AIEngine:
                         label_color = (0, 255, 255) # Yellow (Warning)
                         class_name = self.class_names.get(cls, f"class_{cls}")
 
-                        if duration > ALERT_THRESHOLD_SECONDS:
+                        # Only trigger alert for person class
+                        if class_name == "person" and duration > ALERT_THRESHOLD_SECONDS:
                             zone_color = (0, 0, 255) # Red (Critical)
                             label_color = (0, 0, 255)
                             
@@ -261,23 +293,35 @@ class AIEngine:
             cv2.fillPoly(overlay, [np.array(self.zone, dtype=np.int32)], zone_color)
             cv2.addWeighted(overlay, 0.3, frame, 0.7, 0, frame)
 
-            # Display Status
-            cv2.imshow("Aeon RailGuard - Phase 3 Logic", frame)
+            # Stream frame to backend (throttled)
+            self.push_frame_stream(frame)
 
-            # Quit on 'q'
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            # Display Status (optional, avoid crash if no GUI backend)
+            if self.enable_display:
+                try:
+                    cv2.imshow("Aeon RailGuard - Phase 3 Logic", frame)
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                except Exception as e:
+                    print(f"[WARN] Display disabled (no GUI backend): {e}")
+                    self.enable_display = False
 
         cap.release()
-        cv2.destroyAllWindows()
+        if self.enable_display:
+            try:
+                cv2.destroyAllWindows()
+            except Exception:
+                pass
 
 def main():
     parser = argparse.ArgumentParser(description="Aeon RailGuard AI Engine")
-    parser.add_argument("--source", "-s", type=str, default="datasets/videos/VID_20251207_143017243.mp4", help="Video source path or webcam ID")
+    parser.add_argument("--source", "-s", type=str, default="datasets/videos/training_video.mp4", help="Video source path or webcam ID")
     parser.add_argument("--model", "-m", type=str, default="yolov8n.pt", help="YOLOv8 model path")
     parser.add_argument("--zone-file", "-z", type=str, default="danger_zone.json", help="Path to saved danger zone polygon (json list of [x, y])")
     parser.add_argument("--evidence-dir", "-e", type=str, default="evidence", help="Directory to store evidence snapshots")
     parser.add_argument("--tracker", "-t", type=str, default=DEFAULT_TRACKER, help="Tracker config file for ByteTrack")
+    parser.add_argument("--display", action="store_true", help="Show OpenCV window (requires GUI support)")
+    parser.add_argument("--no-stream", action="store_true", help="Disable MJPEG streaming to backend")
     args = parser.parse_args()
 
     engine = AIEngine(
@@ -286,7 +330,10 @@ def main():
         zone_path=args.zone_file,
         evidence_dir=args.evidence_dir,
         tracker_config=args.tracker,
+        enable_stream=not args.no_stream,
     )
+    # Flag to enable/disable OpenCV imshow to avoid errors on headless/CLI envs
+    engine.enable_display = args.display
     engine.run()
 
 if __name__ == "__main__":

@@ -39,6 +39,11 @@ build/
 /aeon-railguard-ui/.next/
 /aeon-railguard-ui/out/
 
+# --- DATABASE FILES ---
+central-brain/railguard.db
+central-brain/railguard.db-wal
+central-brain/railguard.db-shm
+
 # --- ENVIRONMENT & SECRETS ---
 .env
 .env.local

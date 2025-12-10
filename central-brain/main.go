@@ -11,16 +11,38 @@
 package main
 
 import (
+	"context"
+	"log"
+	"os"
+
 	"central-brain/api"
 	"central-brain/middleware"
 	"central-brain/models"
-	"log"
+	"central-brain/realtime"
+	"central-brain/storage"
+	"central-brain/stream"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/websocket/v2"
 )
 
 func main() {
+	// Initialize realtime hub and history store
+	hub := realtime.NewHub()
+	go hub.Run()
+	history := storage.NewHistoryStore()
+	mjpeg := stream.NewMJPEGHub()
+	go mjpeg.Run()
+
+	// Initialize SQLite database (optional, falls back to memory)
+	db, err := NewDatabase(os.Getenv("DB_DSN"))
+	if err != nil {
+		log.Printf("[DB] SQLite disabled, using in-memory only: %v", err)
+	} else {
+		log.Printf("[DB] SQLite ready")
+	}
+
 	// Initialize Fiber app
 	app := fiber.New(fiber.Config{
 		AppName:      "Aeon RailGuard Central Brain v2.1.0",
@@ -38,10 +60,35 @@ func main() {
 
 	// Root endpoint
 	app.Get("/", handleRoot)
+	app.Post("/api/internal/push", api.HandleInternalPush(hub, history, func(p models.DetectionPayload) error {
+		if db == nil {
+			return nil
+		}
+		return db.InsertDetection(context.Background(), p)
+	}))
+	app.Post("/api/internal/stream/cam1", stream.IngestFrame(mjpeg))
+	app.Get("/api/history", api.HandleHistory(history, func(limit int) ([]models.DetectionPayload, error) {
+		if db == nil {
+			return nil, nil
+		}
+		return db.ListDetections(context.Background(), limit)
+	}))
 
 	// Public endpoints (no auth required)
 	app.Post("/api/auth/login", api.HandleLogin)
 	app.Get("/api/health", api.HandleHealth)
+
+	// Websocket endpoint (no auth for demo)
+	app.Use("/ws", func(c *fiber.Ctx) error {
+		if websocket.IsWebSocketUpgrade(c) {
+			return c.Next()
+		}
+		return fiber.ErrUpgradeRequired
+	})
+	app.Get("/ws", websocket.New(realtime.WSHandler(hub)))
+
+	// MJPEG stream endpoint
+	app.Get("/stream/cam1", stream.StreamMJPEG(mjpeg))
 
 	// Protected endpoints (JWT required)
 	protected := app.Group("/api")
