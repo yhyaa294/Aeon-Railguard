@@ -56,6 +56,13 @@ func main() {
 	// Detections (requires JPL_OFFICER or higher)
 	protected.Get("/detections", middleware.RequireRole(models.RoleJPLOfficer), api.HandleGetDetections)
 
+	// ============================================
+	// HACKATHON FASE 1: JPL Camera Endpoints
+	// ============================================
+	// Public endpoints (no auth for demo purposes)
+	app.Get("/api/jpl", api.HandleGetAllJPLs)
+	app.Get("/api/jpl/:jpl_id/cameras", api.HandleGetJPLCameras)
+
 	// Swagger documentation
 	// Uncomment after running: go install github.com/swaggo/swag/cmd/swag@latest && swag init
 	// app.Get("/api/docs/*", swagger.HandlerDefault)
@@ -80,11 +87,13 @@ func handleRoot(c *fiber.Ctx) error {
 			"API Documentation",
 		},
 		"endpoints": fiber.Map{
-			"health":     "GET /api/health",
-			"login":      "POST /api/auth/login",
-			"hierarchy":  "GET /api/hierarchy (Protected)",
-			"cameras":    "GET /api/cameras (Protected)",
-			"detections": "GET /api/detections (Protected)",
+			"health":      "GET /api/health",
+			"login":       "POST /api/auth/login",
+			"hierarchy":   "GET /api/hierarchy (Protected)",
+			"cameras":     "GET /api/cameras (Protected)",
+			"detections":  "GET /api/detections (Protected)",
+			"jpl_list":    "GET /api/jpl (Public)",
+			"jpl_cameras": "GET /api/jpl/:jpl_id/cameras (Public)",
 		},
 	})
 }
