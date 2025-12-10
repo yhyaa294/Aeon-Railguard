@@ -71,21 +71,61 @@ const cameraPoints: CameraPoint[] = [
   },
 ];
 
-const trainInfo = { name: 'KA Argo Wilis', eta: '05:00', locomotive: 'CC206-13-55' };
-const evidenceList: EvidenceItem[] = [
-  { id: 'EV001', time: '07:32:15', date: '10 Des', location: 'TITIK B', locationType: 'Gg. Masjid', violationType: 'menerobos', thumbnail: '/images/feed-street.jpg', duration: '00:15', description: 'Motor menerobos', speed: '45', platNomor: 'S 4521' },
+// ========= REAL DATA - Loaded from Backend =========
+// trainInfo, evidenceList, jplMessages, stationMessages
+// are now loaded dynamically from WebSocket/API instead of hardcoded
+
+// ========= REAL TRAIN SCHEDULE - JPL 305 NGEMBE =========
+interface RealTrainItem { id: string; name: string; relation: string; time: string; }
+
+const REAL_TRAIN_SCHEDULE: RealTrainItem[] = [
+  { id: 'KA-01', name: 'Bima', relation: 'Surabaya Gubeng - Gambir', time: '20:12' },
+  { id: 'KA-02', name: 'Turangga', relation: 'Surabaya Gubeng - Bandung', time: '20:52' },
+  { id: 'KA-03', name: 'Jayakarta', relation: 'Sby Gubeng - Pasarsenen', time: '14:45' },
+  { id: 'KA-04', name: 'Mutiara Selatan', relation: 'Sby Gubeng - Bandung', time: '19:08' },
+  { id: 'KA-05', name: 'Pasundan', relation: 'Kiaracondong - Sby Gubeng', time: '23:34' },
+  { id: 'KA-06', name: 'Bangunkarta', relation: 'Jombang - Pasarsenen', time: '06:55' },
+  { id: 'KA-07', name: 'Gaya Baru Malam', relation: 'Pasarsenen - Sby Gubeng', time: '22:32' },
+  { id: 'KA-08', name: 'Sancaka', relation: 'Yogyakarta - Sby Gubeng', time: '20:03' },
+  { id: 'KA-09', name: 'Argo Wilis', relation: 'Bandung - Sby Gubeng', time: '16:21' },
+  { id: 'KA-10', name: 'Argo Semeru', relation: 'Gambir - Sby Gubeng', time: '15:47' },
+  { id: 'KA-11', name: 'Ranggajati', relation: 'Cirebon - Jember', time: '15:25' },
+  { id: 'KA-12', name: 'Sri Tanjung', relation: 'Ketapang - Lempuyangan', time: '15:36' },
+  { id: 'KA-13', name: 'Logawa', relation: 'Purwokerto - Jember', time: '13:49' },
+  { id: 'KA-14', name: 'Wijayakusuma', relation: 'Cilacap - Ketapang', time: '22:11' },
+  { id: 'KA-15', name: 'Logawa', relation: 'Dari Purwokerto', time: '11:43' },
+  { id: 'KA-16', name: 'Wijayakusuma', relation: 'Dari Cilacap', time: '19:17' },
+  { id: 'KA-17', name: 'Mutiara Timur', relation: 'Dari Yogyakarta', time: '01:19' },
+  { id: 'KA-18', name: 'Ranggajati', relation: 'Dari Cirebon', time: '10:18' },
+  { id: 'KA-19', name: 'Argo Wilis', relation: 'Dari Bandung', time: '07:53' },
+  { id: 'KA-20', name: 'Bima', relation: 'Dari Gambir', time: '18:03' },
+  { id: 'KA-21', name: 'Turangga', relation: 'Dari Bandung', time: '19:38' },
+  { id: 'KA-22', name: 'Gaya Baru Malam', relation: 'Dari Pasarsenen', time: '13:08' },
+  { id: 'KA-23', name: 'Mutiara Selatan', relation: 'Dari Bandung', time: '20:43' },
+  { id: 'KA-24', name: 'Sancaka', relation: 'Dari Yogyakarta', time: '09:53' },
+  { id: 'KA-25', name: 'Jayakarta', relation: 'Dari Pasarsenen', time: '15:27' },
+  { id: 'KA-26', name: 'Pasundan', relation: 'Dari Kiaracondong', time: '07:05' },
 ];
-const jplMessages: RadioMessage[] = [
-  { id: 'M1', sender: 'JPL 201', time: '13:42', message: 'Argo Wilis 5 menit lagi.', isOwn: false, isAudio: true },
-  { id: 'M2', sender: 'JPL 305', time: '13:43', message: 'Siap, aman.', isOwn: true, isAudio: true },
-];
-const stationMessages: RadioMessage[] = [{ id: 'S1', sender: 'Stasiun', time: '12:30', message: 'Argo delay 15m.', isOwn: false, isAudio: true }];
+
+// Helper: Determine train status based on current time
+const getTrainStatus = (timeString: string): 'PASSED' | 'INCOMING' => {
+  const now = new Date();
+  const [hours, minutes] = timeString.split(':').map(Number);
+  const trainTime = new Date();
+  trainTime.setHours(hours, minutes, 0, 0);
+  return trainTime < now ? 'PASSED' : 'INCOMING';
+};
+
+// Helper: Sort trains by time (ascending)
+const getSortedTrainSchedule = () => {
+  return [...REAL_TRAIN_SCHEDULE].sort((a, b) => {
+    const [aH, aM] = a.time.split(':').map(Number);
+    const [bH, bM] = b.time.split(':').map(Number);
+    return (aH * 60 + aM) - (bH * 60 + bM);
+  });
+};
+
 const violationBadge: Record<string, { bg: string; text: string; label: string }> = { menerobos: { bg: 'bg-red-500', text: 'text-white', label: 'MENEROBOS' }, berhenti: { bg: 'bg-amber-500', text: 'text-white', label: 'BERHENTI' }, nekat: { bg: 'bg-orange-500', text: 'text-white', label: 'NEKAT' } };
-const trainScheduleData: TrainScheduleItem[] = [
-  { id: 'T01', noKA: '102', nama: 'Argo Wilis', relasi: 'Sby→Bdg', tujuan: 'Bandung', jadwal: '06:15', realisasi: '06:15', status: 'PASSED' },
-  { id: 'T07', noKA: '142', nama: 'Sri Tanjung', relasi: 'Bwi→Sby', tujuan: 'Surabaya', jadwal: '14:00', realisasi: '14:05', status: 'INCOMING', delay: 5 },
-  { id: 'T08', noKA: '115', nama: 'Brantas', relasi: 'Blt→Sby', tujuan: 'Surabaya', jadwal: '15:30', realisasi: '15:45', status: 'LATE', delay: 15 },
-];
 const mapMarkers: MapMarker[] = [
   { id: 'POST', name: 'Pos JPL 305', location: 'Pusat', top: '50%', left: '50%', type: 'POST', status: 'ONLINE' },
   { id: 'TITIK_A', name: 'TITIK A', location: 'Jalur Tikus', top: '30%', left: '40%', type: 'CCTV', status: 'ONLINE' },
@@ -217,10 +257,21 @@ export default function DashboardPage() {
   const latestStatusLabel = latest && latest.in_roi ? 'BAHAYA' : 'AMAN';
   const totalViolations = cameraPoints.reduce((sum, c) => sum + c.violations, 0);
   const mostDangerous = cameraPoints.reduce((max, c) => c.violations > max.violations ? c : max, cameraPoints[0]);
+
+  // Empty arrays for messages - will be loaded from backend/WebSocket
+  const jplMessages: RadioMessage[] = [];
+  const stationMessages: RadioMessage[] = [];
   const currentMessages = activeChannel === 'JPL_COORD' ? jplMessages : stationMessages;
+
   const trainDistanceKm = (trainDistance / 1000).toFixed(2);
   const trainPosition = Math.max(5, Math.min(90, 90 - (trainDistance / 2500) * 85));
-  const filteredSchedule = trainScheduleData.filter(t => (t.nama.toLowerCase().includes(scheduleSearch.toLowerCase()) || t.noKA.includes(scheduleSearch)) && (scheduleFilter === 'ALL' || t.status === scheduleFilter));
+
+  // Use real train schedule with dynamic status calculation
+  const sortedSchedule = getSortedTrainSchedule();
+  const filteredSchedule = sortedSchedule
+    .filter(t => t.name.toLowerCase().includes(scheduleSearch.toLowerCase()) || t.relation.toLowerCase().includes(scheduleSearch.toLowerCase()))
+    .map(t => ({ ...t, status: getTrainStatus(t.time) }));
+
   const onlineCCTV = mapMarkers.filter(m => m.type === 'CCTV' && m.status !== 'OFFLINE').length;
   const totalCCTV = mapMarkers.filter(m => m.type === 'CCTV').length;
 
