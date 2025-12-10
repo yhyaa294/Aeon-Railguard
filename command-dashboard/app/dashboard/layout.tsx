@@ -171,9 +171,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* HEADER - Glassmorphism */}
         <header className="bg-slate-900/70 backdrop-blur-xl border-b border-white/5 fixed top-0 right-0 left-64 z-20 h-16 flex items-center justify-between px-8 shadow-2xl">
           <div className="flex items-center gap-4">
-            {/* AEON Logo */}
-            <Image src="/images/logo Aeon.png" alt="AEON" width={120} height={40} className="object-contain" />
-            <div className="h-8 w-px bg-white/10"></div>
             <div className="flex items-center gap-2">
               <div className="h-4 w-1 bg-orange-500 rounded-full"></div>
               <h2 className="text-sm font-bold text-white tracking-widest uppercase">Command Center</h2>
