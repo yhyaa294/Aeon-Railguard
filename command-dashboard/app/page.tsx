@@ -395,12 +395,13 @@ export default function LandingPage() {
               <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }} className="relative mx-auto">
                 <div className="rounded-3xl overflow-hidden border-4 border-[#2D2A70] shadow-2xl bg-black">
                   <video
-                    src="/videos/video demo.mp4"
                     controls
                     playsInline
                     poster="/images/dashboard.png"
                     className="w-full h-auto"
                   >
+                    <source src="/videos/video demo.webm" type="video/webm" />
+                    <source src="/videos/video demo.mp4" type="video/mp4" />
                     Browser tidak mendukung video
                   </video>
                 </div>

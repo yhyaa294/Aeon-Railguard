@@ -36,7 +36,7 @@ export default function DashboardPage() {
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const addLog = (message: string, severity: 'info' | 'warning' | 'danger') => {
     const now = new Date();
@@ -131,8 +131,8 @@ export default function DashboardPage() {
               <div
                 key={cam.id}
                 className={`relative rounded-xl overflow-hidden ${cam.isMain
-                    ? 'bg-gray-900 ring-2 ring-[#DA5525]'
-                    : 'bg-gray-800'
+                  ? 'bg-gray-900 ring-2 ring-[#DA5525]'
+                  : 'bg-gray-800'
                   }`}
               >
                 {/* Camera Placeholder */}
@@ -160,8 +160,8 @@ export default function DashboardPage() {
                       {cam.label}
                     </span>
                     <span className={`text-xs px-2 py-1 rounded-full ${cam.status === 'ONLINE'
-                        ? 'bg-green-500/80 text-white'
-                        : 'bg-red-500/80 text-white'
+                      ? 'bg-green-500/80 text-white'
+                      : 'bg-red-500/80 text-white'
                       }`}>
                       {cam.status}
                     </span>
