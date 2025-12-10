@@ -93,13 +93,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* SIDEBAR - Dark Glassy */}
       <aside className="w-64 bg-slate-900/90 backdrop-blur-xl border-r border-white/5 fixed h-full flex flex-col z-30 shadow-2xl">
         {/* Logo Area */}
-        <div className="p-6 border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-xl font-black text-white shadow-lg shadow-orange-500/20 ring-1 ring-white/10">A</div>
-            <div>
-              <h1 className="text-lg font-bold tracking-widest text-white">AEON</h1>
-              <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-widest">RailGuard Enterprise</p>
-            </div>
+        <div className="h-20 flex items-center justify-center border-b border-white/5 bg-slate-900">
+          <div className="relative w-32 h-12">
+            <Image src="/images/logo Aeon.png" alt="AEON" fill className="object-contain" priority />
           </div>
         </div>
 
