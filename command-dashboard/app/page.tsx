@@ -237,24 +237,25 @@ export default function LandingPage() {
           <section id="hardware" className="py-24 bg-gradient-to-b from-white to-slate-50">
             <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
               <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-                <Image src="/images/rencana alat.png" alt="Aeon Sentinel Unit" width={550} height={550} className="rounded-2xl shadow-xl" />
+                <Image src="/images/rencana-alat.png" alt="Aeon Sentinel Unit" width={550} height={550} className="rounded-2xl shadow-xl" />
               </motion.div>
               <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }}>
                 {/* Badge - Rencana */}
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="text-sm uppercase tracking-widest text-[#DA5525] font-bold">Rencana Hardware</span>
-                  <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-semibold">⏳ Menunggu Pendanaan</span>
+                  <span className="text-sm bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full font-bold border border-amber-200">
+                    ⏳ Rencana Hardware / Future Roadmap
+                  </span>
                 </div>
                 <h2 className="text-4xl md:text-5xl font-bold mt-1 mb-4 text-[#2D2A70]">Aeon Sentinel Unit</h2>
                 <p className="text-slate-600 leading-relaxed text-lg mb-4">
                   Saat ini Aeon RailGuard fokus pada pengembangan <strong className="text-[#2D2A70]">software AI monitoring</strong>. Hardware Sentinel Unit merupakan rencana ekspansi setelah mendapatkan pendanaan yang memadai.
                 </p>
                 <p className="text-slate-500 leading-relaxed text-base mb-6">
-                  Desain awal perangkat keras ini siap diproduksi dengan spesifikasi berikut untuk menghadapi kondisi lapangan di Indonesia:
+                  Desain awal perangkat keras ini siap diproduksi dengan spesifikasi berikut:
                 </p>
                 <div className="space-y-3">
                   <SpecItem text="Tahan Cuaca IP67 & Anti-Korosi" />
-                  <SpecItem text="Tenaga Surya Mandiri (72 Jam Backup)" />
+                  <SpecItem text="Tenaga Surya Mandiri (72 Jam Backup dengan Photovoltaic)" />
                   <SpecItem text="Konektivitas Dual 4G/5G + Satelit" />
                   <SpecItem text="Sistem Self-Diagnostic AI" />
                   <SpecItem text="Speaker Sirine 120dB Terintegrasi" />
