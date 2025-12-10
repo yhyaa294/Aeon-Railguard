@@ -384,6 +384,35 @@ export default function LandingPage() {
             </div>
           </section>
 
+          {/* VIDEO DEMO SECTION */}
+          <section id="demo" className="py-24 bg-gradient-to-b from-slate-50 to-white">
+            <div className="max-w-5xl mx-auto px-6 text-center">
+              <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
+                <span className="text-sm uppercase tracking-widest text-[#DA5525] font-bold">Demo</span>
+                <h2 className="text-4xl md:text-5xl font-bold mt-3 mb-6 text-[#2D2A70]">Lihat Sistem Beraksi</h2>
+                <p className="text-slate-600 text-lg max-w-2xl mx-auto mb-12">Demonstrasi real-time bagaimana Aeon RailGuard mendeteksi objek dan memberikan peringatan dini</p>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }} className="relative mx-auto">
+                <div className="rounded-3xl overflow-hidden border-4 border-[#2D2A70] shadow-2xl bg-black">
+                  <video
+                    src="/videos/video demo.mp4"
+                    controls
+                    playsInline
+                    poster="/images/dashboard.png"
+                    className="w-full h-auto"
+                  >
+                    Browser tidak mendukung video
+                  </video>
+                </div>
+                <div className="mt-6 flex justify-center gap-4">
+                  <div className="bg-white rounded-full px-6 py-2 shadow-lg border border-slate-200 text-sm text-slate-600">
+                    <span className="text-[#DA5525] font-bold">🎥</span> Video Demo Sistem
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </section>
+
           {/* MAP */}
           <section id="map" className="py-24 bg-white">
             <div className="max-w-5xl mx-auto px-6 text-center">

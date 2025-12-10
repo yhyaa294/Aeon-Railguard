@@ -85,19 +85,30 @@ export default function CinematicLoginPage() {
             className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center"
           >
             {/* Video Container with Shadow Frame */}
-            <div className="relative bg-white rounded-2xl shadow-2xl p-4 border border-slate-200">
+            <div className="relative bg-white rounded-2xl shadow-2xl p-6 border border-slate-200">
               <video
                 ref={videoRef}
                 autoPlay
                 muted
                 playsInline
                 onEnded={handleVideoEnd}
-                onError={handleVideoError}
+                onError={() => {
+                  // If video fails, auto proceed after 2 seconds
+                  setTimeout(handleVideoEnd, 2000);
+                }}
                 className="w-80 h-auto object-contain rounded-lg"
+                style={{ display: 'block' }}
               >
                 <source src="/videos/video logo.mp4" type="video/mp4" />
-                Video tidak dapat dimuat
               </video>
+              {/* Fallback animated logo shown behind video */}
+              <motion.img
+                src="/images/logo Aeon.png"
+                alt="Aeon"
+                animate={{ scale: [1, 1.05, 1], opacity: [0.7, 1, 0.7] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="absolute inset-0 m-auto w-20 h-20 object-contain -z-10"
+              />
             </div>
 
             {/* Loading Text Below Video */}
