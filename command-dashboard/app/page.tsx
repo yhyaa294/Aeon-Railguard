@@ -143,7 +143,7 @@ export default function LandingPage() {
                 <button onClick={() => scrollToSection('roadmap')} className="hover:text-[#2D2A70] transition-colors">Roadmap</button>
               </div>
               <button onClick={handleDashboardClick} className="flex items-center gap-2 text-sm text-white font-bold px-5 py-2.5 rounded-full bg-[#DA5525] hover:bg-[#c44a1f] shadow-lg transition-all">
-                Akses Dashboard
+                coba sekarang
               </button>
             </div>
           </nav>
@@ -158,12 +158,12 @@ export default function LandingPage() {
               <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-none drop-shadow-2xl">AEON<br />RAILGUARD</h1>
               <div className="mt-6">
                 <span className="inline-block bg-[#DA5525] text-white text-sm md:text-base font-semibold px-6 py-2.5 rounded-full uppercase tracking-wider shadow-xl">
-                  Solusi Cerdas Perlintasan & Jalur Tikus
+                  Solusi Cerdas Perlintasan ilegal tanpa harus menutupnya
                 </span>
               </div>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button onClick={handleDashboardClick} className="flex items-center gap-2 bg-[#DA5525] hover:bg-[#c44a1f] text-white font-bold px-8 py-3.5 rounded-full shadow-xl transition-all hover:scale-105">
-                  <Play size={20} /> Akses Dashboard
+                  <Play size={20} /> coba sekarang
                 </button>
                 <button onClick={() => scrollToSection('masalah')} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white font-bold px-8 py-3.5 rounded-full border-2 border-white/50 transition-all hover:scale-105">
                   <MapPin size={20} /> Pelajari Lebih Lanjut
@@ -186,12 +186,14 @@ export default function LandingPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-3xl font-bold text-[#DA5525]">4,000+</p>
-                    <p className="text-slate-500 text-sm">Perlintasan Tidak Resmi</p>
+                    <p className="text-3xl font-bold text-[#DA5525]">1.093</p>
+                    <p className="text-slate-500 text-sm">Perlintasan Tidak Resmi/ilegal</p>
                   </div>
                   <div className="bg-slate-50 rounded-xl p-4">
-                    <p className="text-3xl font-bold text-[#DA5525]">200+</p>
-                    <p className="text-slate-500 text-sm">Kecelakaan/Tahun</p>
+                    <p className="text-3xl font-bold text-[#DA5525]">1.226</p>
+                    <p className="text-slate-500 text-sm">Korban pada tahun 2020-2024
+
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -206,13 +208,13 @@ export default function LandingPage() {
             <div className="max-w-7xl mx-auto px-6 text-center">
               <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
                 <span className="text-sm uppercase tracking-widest text-[#DA5525] font-bold">Solusi</span>
-                <h2 className="text-4xl md:text-5xl font-bold mt-3 mb-4 text-[#2D2A70]">Ekosistem Keselamatan</h2>
-                <p className="text-slate-600 max-w-3xl mx-auto mb-16 text-lg">Tiga pilar teknologi yang bekerja bersama untuk menciptakan perlintasan yang lebih aman. Pendekatan kami menggabungkan <strong>AI, IoT, dan hardware tangguh</strong> untuk solusi end-to-end.</p>
+                <h2 className="text-4xl md:text-5xl font-bold mt-3 mb-4 text-[#2D2A70]"> Aeon RailGuard  </h2>
+                <p className="text-slate-600 max-w-3xl mx-auto mb-16 text-lg"> Aeon RailGuard adalah sistem Automatic Early Warning System (AEWS) berbasis <strong>Website yang terintegrasikan  dengan AI , Compueter vision , dan machine learning </strong> untuk solusi pengawasan jalur perlintasan ilegal / jalur tikus.</p>
               </motion.div>
               <div className="grid md:grid-cols-3 gap-8">
-                <SolutionCard icon={<Eye size={36} />} title="Multimodal Vision" description="Gabungan kamera Thermal dan RGB untuk deteksi akurat di segala cuaca. Sistem mampu mendeteksi objek di malam hari dan cuaca ekstrem berkat dual-mode imaging." delay={0.1} />
-                <SolutionCard icon={<Radio size={36} />} title="Smart Grid" description="Sistem terintegrasi dengan IoT dan palang pintu otomatis. Dashboard monitoring real-time memungkinkan operator melihat kondisi semua perlintasan dari satu tempat." delay={0.2} />
-                <SolutionCard icon={<Shield size={36} />} title="⏳ Rencana: Sentinel Unit" description="Pengembangan hardware IoT tangguh dengan panel surya dan konstruksi anti-vandal. Ini adalah roadmap ekspansi kami setelah pendanaan, untuk mendukung operasi di area terpencil tanpa listrik." delay={0.3} />
+                <SolutionCard icon={<Eye size={36} />} title=" Computer Vision " description="Terintegrasikan dengan YOLO V8 , yang telah di latih agar mampu mendeteksi berbagai objek yang melintas di jalur perlintasan ilegal/jalur tikus . Serta dapat mendeteksi banyak objek sekaligus dalam 1 frame " delay={0.1} />
+                <SolutionCard icon={<Radio size={36} />} title="Smart Dashboard" description="Dashboard monitoring real-time memungkinkan operator melihat kondisi semua perlintasan dari satu tempat, serta memiliki Banyak fitur yang membantu manajemen petugas" delay={0.2} />
+                <SolutionCard icon={<Shield size={36} />} title="⏳ Rencana: Sentinel Unit" description="Rencana pengembangan  Alat hardware  berbais IoT  dan arduino tangguh dengan panel surya dan konstruksi anti-vandal. Ini adalah roadmap ekspansi kami setelah pendanaan, untuk mendukung operasi di area terpencil tanpa listrik." delay={0.3} />
               </div>
             </div>
           </section>
@@ -226,7 +228,7 @@ export default function LandingPage() {
                 <p className="text-slate-600 max-w-3xl mx-auto text-lg">Proses pengambilan keputusan cerdas dalam hitungan milidetik. Sistem kami menggunakan teknologi <strong>Computer Vision</strong> berbasis deep learning yang telah dioptimalkan untuk kondisi perlintasan di Indonesia.</p>
               </motion.div>
               <div className="grid lg:grid-cols-3 gap-8">
-                <TechCard step="01" icon={<Camera size={32} />} title="Input: Kamera & Thermal" desc="Menangkap visual dan suhu objek secara real-time menggunakan kamera RGB 4K dan thermal imaging. Dual-mode detection memastikan akurasi di siang maupun malam hari." delay={0.1} />
+                <TechCard step="01" icon={<Camera size={32} />} title="Input: Kamera CCTV " desc="Menangkap visual objek secara real-time menggunakan kamera ." delay={0.1} />
                 <TechCard step="02" icon={<Cpu size={32} />} title="Proses: YOLOv8 Edge AI" desc="Model AI YOLOv8 custom-trained memproses data video dalam <50ms. Edge computing di lapangan menghilangkan ketergantungan pada koneksi internet dan meminimalkan latensi." delay={0.2} />
                 <TechCard step="03" icon={<Bell size={32} />} title="Output: Peringatan & ARSCP" desc="Sistem mengirim sinyal peringatan dini ke masinis melalui protokol ARSCP (Automatic Railway Signal Control Protocol), sekaligus mengaktifkan sirine lokal untuk memperingatkan warga." delay={0.3} />
               </div>
@@ -309,7 +311,7 @@ export default function LandingPage() {
             <div className="max-w-6xl mx-auto px-6">
               <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Target Dampak</h2>
-                <p className="text-slate-300 max-w-xl mx-auto">Misi kami adalah menciptakan perkeretaapian Indonesia yang lebih aman</p>
+                <p className="text-slate-300 max-w-xl mx-auto">Misi kami adalah menciptakan perlintasan ilegal ( jalur tikus ) di rel kereta api yang lebih aman tanpa menutupnya </p>
               </motion.div>
               <div className="grid md:grid-cols-4 gap-6">
                 <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center border border-white/20">
@@ -344,13 +346,13 @@ export default function LandingPage() {
                 <p className="text-slate-600 text-xl mb-10 max-w-2xl mx-auto">Kami terbuka untuk kemitraan dengan pemerintah, BUMN, dan pihak swasta yang ingin berkontribusi dalam keselamatan perkeretaapian Indonesia.</p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <button onClick={handleDashboardClick} className="flex items-center gap-2 bg-[#DA5525] hover:bg-[#c44a1f] text-white font-bold px-8 py-4 rounded-full shadow-xl transition-all hover:scale-105 text-lg">
-                    <Play size={22} /> Lihat Demo Dashboard
+                    <Play size={22} /> coba sekarang
                   </button>
-                  <a href="mailto:hello@aeonrailguard.id" className="flex items-center gap-2 bg-[#2D2A70] hover:bg-[#1a1850] text-white font-bold px-8 py-4 rounded-full shadow-xl transition-all hover:scale-105 text-lg">
+                  <a href="mailto:syarifuddinudin526@gmail.com" className="flex items-center gap-2 bg-[#2D2A70] hover:bg-[#1a1850] text-white font-bold px-8 py-4 rounded-full shadow-xl transition-all hover:scale-105 text-lg">
                     <Mail size={22} /> Hubungi Kami
                   </a>
                 </div>
-                <p className="text-slate-400 text-sm mt-8">📍 Berbasis di Jombang, Jawa Timur | 📧 hello@aeonrailguard.id</p>
+                <p className="text-slate-400 text-sm mt-8">📍 Berbasis di Jombang, Jawa Timur | 📧 syarifuddinudin526@gmail.com</p>
               </motion.div>
             </div>
           </section>
@@ -365,11 +367,11 @@ export default function LandingPage() {
               <div className="space-y-4">
                 <FAQItem
                   question="Apa itu Aeon RailGuard?"
-                  answer="Aeon RailGuard adalah sistem monitoring perlintasan kereta berbasis AI yang menggunakan Computer Vision untuk mendeteksi objek dan potensi bahaya di perlintasan secara real-time. Sistem ini dirancang untuk meningkatkan keselamatan di jalur-jalur tikus (perlintasan ilegal) yang tidak terjangkau palang pintu."
+                  answer="Aeon RailGuard adalah sistem monitoring perlintasan kereta berbasis AI yang menggunakan Computer Vision untuk mendeteksi objek dan potensi bahaya di perlintasan secara real-time. Sistem ini dirancang untuk meningkatkan keselamatan di jalur-jalur tikus (perlintasan ilegal) yang tidak terjangkau palang pintu dan pos pengawasan."
                 />
                 <FAQItem
                   question="Apakah sistem ini membutuhkan koneksi internet?"
-                  answer="Tidak wajib. Sistem kami menggunakan edge computing sehingga deteksi AI diproses langsung di perangkat lapangan tanpa ketergantungan pada koneksi internet. Koneksi hanya diperlukan untuk sinkronisasi data ke dashboard pusat."
+                  answer="Ya , Sistem ini membutuhkan konseksi internet untuk beroprasi. sistem membutuhkan koneksi internet untuk merubah rekaman cctv real-time  ke sistem Pemantauan AI yang kemudian akan ditampilkan di dashboard."
                 />
                 <FAQItem
                   question="Bagaimana model bisnis/pricingnya?"
@@ -383,35 +385,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* VIDEO DEMO SECTION */}
-          <section id="demo" className="py-24 bg-gradient-to-b from-slate-50 to-white">
-            <div className="max-w-5xl mx-auto px-6 text-center">
-              <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
-                <span className="text-sm uppercase tracking-widest text-[#DA5525] font-bold">Demo</span>
-                <h2 className="text-4xl md:text-5xl font-bold mt-3 mb-6 text-[#2D2A70]">Lihat Sistem Beraksi</h2>
-                <p className="text-slate-600 text-lg max-w-2xl mx-auto mb-12">Demonstrasi real-time bagaimana Aeon RailGuard mendeteksi objek dan memberikan peringatan dini</p>
-              </motion.div>
-              <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.2 }} className="relative mx-auto">
-                <div className="rounded-3xl overflow-hidden border-4 border-[#2D2A70] shadow-2xl bg-black">
-                  <video
-                    controls
-                    playsInline
-                    poster="/images/dashboard.png"
-                    className="w-full h-auto"
-                  >
-                    <source src="/videos/video demo.webm" type="video/webm" />
-                    <source src="/videos/video demo.mp4" type="video/mp4" />
-                    Browser tidak mendukung video
-                  </video>
-                </div>
-                <div className="mt-6 flex justify-center gap-4">
-                  <div className="bg-white rounded-full px-6 py-2 shadow-lg border border-slate-200 text-sm text-slate-600">
-                    <span className="text-[#DA5525] font-bold">🎥</span> Video Demo Sistem
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </section>
+         
 
           {/* MAP */}
           <section id="map" className="py-24 bg-white">
@@ -490,7 +464,7 @@ export default function LandingPage() {
               </div>
               <div className="border-t border-white/10 pt-8 text-center">
                 <p className="text-transparent bg-clip-text bg-gradient-to-r from-slate-400 via-[#DA5525] to-slate-400 text-sm font-medium">
-                  © 2026 AEON RailGuard by GenZ AI. Dari teknologi untuk Indonesia.
+                  © 2025 AEON RailGuard by GenZ AI Berdampak. Dari teknologi untuk Indonesia.
                 </p>
               </div>
             </div>

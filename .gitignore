@@ -62,6 +62,9 @@ Desktop.ini
 *.swp
 *~
 
+# --- LARGE DEMO VIDEOS ---
+command-dashboard/public/video demo.mp4
+
 # --- EXCEPTIONS ---
 !command-dashboard/public/**
 

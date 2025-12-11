@@ -397,7 +397,7 @@ export default function HierarchyLoginPage() {
               {/* Footer */}
               <div className="bg-slate-50 px-6 py-3 border-t text-center">
                 <p className="text-xs text-slate-500">
-                  © 2026 <span className="font-bold text-[#DA5525]">GenZ AI</span> • Aeon RailGuard
+                  © 2025 <span className="font-bold text-[#DA5525]">GenZ AI Berdampak</span> • Aeon RailGuard
                 </p>
               </div>
             </div>

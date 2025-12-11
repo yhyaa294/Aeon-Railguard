@@ -21,12 +21,36 @@ from ultralytics import YOLO
 # --- CONFIGURATION (can be overridden by ENV) ---
 BRAIN_URL = os.getenv("BRAIN_URL", "http://localhost:8080/api/internal/push")
 STREAM_URL = os.getenv("STREAM_URL", "http://localhost:8080/api/internal/stream/cam1")
-CAMERA_ID = os.getenv("CAMERA_ID", "TITIK_A")
 ENABLE_STREAM = os.getenv("ENABLE_STREAM", "true").lower() != "false"
 ALERT_THRESHOLD_SECONDS = 3.0
 CONFIDENCE_THRESHOLD = 0.40  # Lower threshold to detect more objects including trains (detected as truck/bus)
 # Default ByteTrack config bundled with ultralytics
 DEFAULT_TRACKER = "bytetrack.yaml"
+
+# ==========================================
+# 🎛️ KONFIGURASI DEMO (GANTI DISINI)
+# Pilih: 'WEBCAM', 'TITIK_B', 'TITIK_C', 'TITIK_D'
+# ==========================================
+ACTIVE_SCENARIO = 'TITIK_B'  # <--- UBAH INI UNTUK DEMO
+
+VIDEO_PATHS = {
+    'WEBCAM': 0,                      # Webcam Laptop
+    'TITIK_B': 'videos/titik_b.mp4',  # Skenario Kereta Lewat
+    'TITIK_C': 'videos/titik_c.mp4',  # Skenario Macet
+    'TITIK_D': 'videos/titik_d.mp4',  # Skenario Lain
+}
+
+CAMERA_IDS = {
+    'WEBCAM': 'TITIK_A',
+    'TITIK_B': 'TITIK_B', 
+    'TITIK_C': 'TITIK_C',
+    'TITIK_D': 'TITIK_D',
+}
+
+# Get active source config
+VIDEO_SOURCE = VIDEO_PATHS.get(ACTIVE_SCENARIO, 0)
+CAMERA_ID = CAMERA_IDS.get(ACTIVE_SCENARIO, 'TITIK_A')
+SOURCE_NAME = ACTIVE_SCENARIO
 
 # ---------------------------------------------------------
 # ⚠️ REPLACE THESE COORDINATES WITH YOUR CUSTOM ZONE ⚠️
@@ -260,6 +284,12 @@ class AIEngine:
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 print(f"[INFO] Video properties: {width}x{height}, {fps} FPS, {frame_count} frames")
 
+        # Get original video properties for logging
+        orig_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        orig_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print(f"[INFO] Original resolution: {orig_w}x{orig_h}")
+        print(f"[INFO] Processing at: 640px width (resized for performance)")
+
         # Loop through frames
         frame_count = 0
         print(f"[INFO] Starting frame processing loop...")
@@ -281,6 +311,12 @@ class AIEngine:
             frame_count += 1
             if frame_count % 100 == 0:  # Log every 100 frames
                 print(f"[INFO] Processed {frame_count} frames")
+
+            # RESIZE for performance (max 640px width)
+            h, w = frame.shape[:2]
+            if w > 640:
+                scale = 640 / w
+                frame = cv2.resize(frame, (640, int(h * scale)), interpolation=cv2.INTER_AREA)
 
             # 1. Run YOLO Tracking
             # persist=True is crucial for ID tracking across frames
@@ -414,7 +450,8 @@ class AIEngine:
 
 def main():
     parser = argparse.ArgumentParser(description="Aeon RailGuard AI Engine")
-    parser.add_argument("--source", "-s", type=str, default="datasets/videos/training_video.mp4", help="Video source path or webcam ID")
+    # Use VIDEO_SOURCE from multi-source config as default
+    parser.add_argument("--source", "-s", type=str, default=str(VIDEO_SOURCE), help="Video source path or webcam ID (0 for webcam)")
     parser.add_argument("--model", "-m", type=str, default="yolov8n.pt", help="YOLOv8 model path")
     parser.add_argument("--zone-file", "-z", type=str, default="danger_zone.json", help="Path to saved danger zone polygon (json list of [x, y])")
     parser.add_argument("--evidence-dir", "-e", type=str, default="evidence", help="Directory to store evidence snapshots")
@@ -422,6 +459,15 @@ def main():
     parser.add_argument("--display", action="store_true", help="Show OpenCV window (requires GUI support)")
     parser.add_argument("--no-stream", action="store_true", help="Disable MJPEG streaming to backend")
     args = parser.parse_args()
+
+    # Startup log showing active source
+    print(f"╔══════════════════════════════════════════════════════╗")
+    print(f"║  AEON RAILGUARD - AI ENGINE                          ║")
+    print(f"╠══════════════════════════════════════════════════════╣")
+    print(f"║  Active Scenario: {ACTIVE_SCENARIO:<33} ║")
+    print(f"║  Video Source: {str(VIDEO_SOURCE):<36} ║")
+    print(f"║  Camera ID: {CAMERA_ID:<40} ║")
+    print(f"╚══════════════════════════════════════════════════════╝")
 
     engine = AIEngine(
         source=args.source,

@@ -135,6 +135,101 @@ const mapMarkers: MapMarker[] = [
   { id: 'TITIK_D', name: 'TITIK D', location: 'Pasar', top: '80%', left: '55%', type: 'CCTV', status: 'ONLINE' },
 ];
 
+// ========= EVIDENCE LOGS - Realistic Scenario Data =========
+interface EvidenceLog {
+  id: string;
+  title: string;
+  time: string;
+  location: string;
+  status: 'DANGER' | 'WARNING' | 'SAFE';
+  image: string;
+  description: string;
+}
+
+const EVIDENCE_LOGS: EvidenceLog[] = [
+  {
+    id: 'EV-001',
+    title: 'Motor Berhenti di Rel',
+    time: '07:14 WIB',
+    location: 'JPL 305 (Titik A)',
+    status: 'DANGER',
+    image: '/images/evidence/motorberhentidirel.jpg',
+    description: 'Kendaraan roda dua berhenti tepat di jalur rel saat sinyal berbunyi.',
+  },
+  {
+    id: 'EV-002',
+    title: 'Orang Berhenti di Rel',
+    time: '08:45 WIB',
+    location: 'JPL 305 (Titik B)',
+    status: 'DANGER',
+    image: '/images/evidence/orang-berhenti-direl.jpg',
+    description: 'Pejalan kaki berhenti di area steril rel kereta api.',
+  },
+  {
+    id: 'EV-003',
+    title: 'Orang Berjalan di Rel',
+    time: '09:22 WIB',
+    location: 'JPL 305 (Titik B)',
+    status: 'WARNING',
+    image: '/images/evidence/orang-berjalan.jpg',
+    description: 'Terdeteksi warga berjalan menyusuri jalur kereta api.',
+  },
+  {
+    id: 'EV-004',
+    title: 'Lalu Lintas Padat',
+    time: '16:30 WIB',
+    location: 'JPL 305 (Titik C)',
+    status: 'WARNING',
+    image: '/images/evidence/lalulintaspadat.jpg',
+    description: 'Ekor kemacetan mendekati area perlintasan.',
+  },
+  {
+    id: 'EV-005',
+    title: 'Kemacetan Bahaya',
+    time: '16:45 WIB',
+    location: 'JPL 305 (Titik C)',
+    status: 'DANGER',
+    image: '/images/evidence/lalulintaspadatbahaya.jpg',
+    description: 'Kemacetan padat menutupi palang pintu, risiko tabrakan tinggi.',
+  },
+  {
+    id: 'EV-006',
+    title: 'Motor Melintas',
+    time: '10:15 WIB',
+    location: 'JPL 305 (Titik A)',
+    status: 'WARNING',
+    image: '/images/evidence/motorlewat.jpg',
+    description: 'Motor melintas di area perlintasan.',
+  },
+  {
+    id: 'EV-007',
+    title: 'Kereta Datang',
+    time: '10:05 WIB',
+    location: 'JPL 305',
+    status: 'SAFE',
+    image: '/images/evidence/keretadatang.jpg',
+    description: 'Kereta api melintas dengan aman, tidak ada halangan terdeteksi.',
+  },
+  {
+    id: 'EV-008',
+    title: 'Kereta Melintas Aman',
+    time: '14:20 WIB',
+    location: 'JPL 305',
+    status: 'SAFE',
+    image: '/images/evidence/keretadatang2.jpg',
+    description: 'Kereta api melintas lancar, area perlintasan bersih.',
+  },
+];
+
+const getStatusBadge = (status: 'DANGER' | 'WARNING' | 'SAFE') => {
+  switch (status) {
+    case 'DANGER': return { bg: 'bg-red-500', text: 'BAHAYA TINGGI', icon: '🚨' };
+    case 'WARNING': return { bg: 'bg-amber-500', text: 'PERINGATAN', icon: '⚠️' };
+    case 'SAFE': return { bg: 'bg-emerald-500', text: 'AMAN', icon: '✅' };
+  }
+};
+
+
 // ========= COMPONENT =========
 export default function DashboardPage() {
   const { latest, history, isConnected: wsConnected } = useDetectionStream(50);
@@ -169,6 +264,8 @@ export default function DashboardPage() {
   const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>('ALL');
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
   const [isStreamActive, setIsStreamActive] = useState(true);
+  const [monitorMode, setMonitorMode] = useState<'GRID' | 'FOCUS'>('GRID');
+  const [focusedCamera, setFocusedCamera] = useState<TabType | null>(null);
 
   // Settings State
   const [aiThreshold, setAiThreshold] = useState(75);
@@ -181,6 +278,15 @@ export default function DashboardPage() {
   const [detectHewan, setDetectHewan] = useState(true);
   const [waNumber, setWaNumber] = useState('081234567890');
   const [loadingConfig, setLoadingConfig] = useState(false);
+
+  // ========= AEWS - Automatic Early Warning System =========
+  const [interlockActive, setInterlockActive] = useState(false);
+  const [interlockPhase, setInterlockPhase] = useState<'IDLE' | 'DETECTING' | 'SENDING' | 'CONFIRMED'>('IDLE');
+  const [jplStatus, setJplStatus] = useState<'NORMAL' | 'SENDING' | 'CONFIRMED'>('NORMAL');
+  const [stasiunStatus, setStasiunStatus] = useState<'NORMAL' | 'SENDING' | 'CONFIRMED'>('NORMAL');
+  const [masinisStatus, setMasinisStatus] = useState<'NORMAL' | 'SENDING' | 'CONFIRMED'>('NORMAL');
+  const [demoMode, setDemoMode] = useState(false);  // Secret demo trigger
+  const [emergencyTrainName, setEmergencyTrainName] = useState('');
 
   const aiInsightFull = "Analisis: Lonjakan aktivitas di Titik B pada 07:00-08:00.";
 
@@ -208,6 +314,101 @@ export default function DashboardPage() {
   const showCustomToast = (msg: string) => { setToastMessage(msg); setShowToast(true); setTimeout(() => setShowToast(false), 4000); };
   const triggerEmergency = () => { setShowEmergencyModal(false); setIsEmergency(true); showCustomToast('🚨 SINYAL BAHAYA TERKIRIM!'); setTimeout(() => setIsEmergency(false), 10000); };
   const triggerTrainStop = () => { setShowTrainStopModal(false); showCustomToast('⚠️ REM DARURAT TERKIRIM!'); };
+
+  // ========= AEWS HELPER: Check if train is approaching within X minutes =========
+  const getMinutesUntilTrain = (timeString: string): number => {
+    const now = new Date();
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const trainTime = new Date();
+    trainTime.setHours(hours, minutes, 0, 0);
+    const diff = (trainTime.getTime() - now.getTime()) / (1000 * 60);
+    return diff;
+  };
+
+  const isTrainApproaching = (withinMinutes: number = 20): boolean => {
+    return sortedSchedule.some(t => {
+      const mins = getMinutesUntilTrain(t.time);
+      return mins > 0 && mins <= withinMinutes;
+    });
+  };
+
+  // ========= AEWS: Emergency Protocol =========
+  const triggerEmergencyProtocol = (trainName: string) => {
+    if (interlockActive) return; // Prevent double trigger
+
+    setInterlockActive(true);
+    setInterlockPhase('DETECTING');
+    setEmergencyTrainName(trainName);
+    setIsEmergency(true);
+
+    // T+0s: CRITICAL INTERLOCK MODE
+    setToastMessage('🚨 CRITICAL INTERLOCK ACTIVATED - BAHAYA TERDETEKSI!');
+    setShowToast(true);
+
+    // T+1s: Start sending to JPL
+    setTimeout(() => {
+      setInterlockPhase('SENDING');
+      setJplStatus('SENDING');
+      setToastMessage('📡 Mengirim sinyal darurat ke JPL 305...');
+      setShowToast(true);
+    }, 1000);
+
+    // T+2s: JPL Confirmed, send to Stasiun
+    setTimeout(() => {
+      setJplStatus('CONFIRMED');
+      setStasiunStatus('SENDING');
+      setToastMessage('✅ JPL 305 TERKONFIRMASI - Mengirim ke Stasiun...');
+      setShowToast(true);
+    }, 2500);
+
+    // T+4s: Stasiun Confirmed, send to Masinis
+    setTimeout(() => {
+      setStasiunStatus('CONFIRMED');
+      setMasinisStatus('SENDING');
+      setToastMessage(`📡 Mengirim SINYAL HENTI ke Lokomotif ${trainName}...`);
+      setShowToast(true);
+    }, 4000);
+
+    // T+6s: Masinis Confirmed
+    setTimeout(() => {
+      setMasinisStatus('CONFIRMED');
+      setInterlockPhase('CONFIRMED');
+      setToastMessage(`✅ MASINIS ${trainName} TERKONFIRMASI MENERIMA ACK-305`);
+      setShowToast(true);
+    }, 6000);
+
+    // T+12s: Reset interlock (simulation complete)
+    setTimeout(() => {
+      setInterlockActive(false);
+      setInterlockPhase('IDLE');
+      setIsEmergency(false);
+      setJplStatus('NORMAL');
+      setStasiunStatus('NORMAL');
+      setMasinisStatus('NORMAL');
+      setToastMessage('🟢 SITUASI TERKENDALI - Protokol selesai');
+      setShowToast(true);
+    }, 12000);
+  };
+
+  // ========= AEWS: Monitoring useEffect =========
+  useEffect(() => {
+    // Check if danger detected (from AI WebSocket) AND train is approaching
+    const isDanger = latest && latest.in_roi;
+
+    if ((isDanger || demoMode) && !interlockActive) {
+      // Check for incoming train within 20 minutes
+      const nearestTrain = sortedSchedule
+        .map(t => ({ ...t, minsAway: getMinutesUntilTrain(t.time) }))
+        .find(t => t.minsAway > 0 && t.minsAway <= 20);
+
+      if (nearestTrain || demoMode) {
+        const trainName = nearestTrain?.name || incomingTrain.name;
+        triggerEmergencyProtocol(trainName);
+        if (demoMode) setDemoMode(false); // Reset demo mode after trigger
+      }
+    }
+  }, [latest, demoMode]);
+
   const handleSaveSettings = async () => {
     setLoadingConfig(true);
     try {
@@ -259,9 +460,10 @@ export default function DashboardPage() {
   const totalViolations = cameraPoints.reduce((sum, c) => sum + c.violations, 0);
   const mostDangerous = cameraPoints.reduce((max, c) => c.violations > max.violations ? c : max, cameraPoints[0]);
 
-  // Empty arrays for messages - will be loaded from backend/WebSocket
+  // Empty arrays for messages/evidence - will be loaded from backend/WebSocket
   const jplMessages: RadioMessage[] = [];
   const stationMessages: RadioMessage[] = [];
+  const evidenceList: EvidenceItem[] = [];
   const currentMessages = activeChannel === 'JPL_COORD' ? jplMessages : stationMessages;
 
   const trainDistanceKm = (trainDistance / 1000).toFixed(2);
@@ -273,37 +475,10 @@ export default function DashboardPage() {
     .filter(t => t.name.toLowerCase().includes(scheduleSearch.toLowerCase()) || t.relation.toLowerCase().includes(scheduleSearch.toLowerCase()))
     .map(t => ({ ...t, status: getTrainStatus(t.time) }));
 
-  // Calculate next train info
-  const trainInfo = useMemo(() => {
-    const now = new Date();
-    const incomingTrains = sortedSchedule
-      .map(t => ({ ...t, status: getTrainStatus(t.time) }))
-      .filter(t => t.status === 'INCOMING');
-    
-    if (incomingTrains.length === 0) {
-      return { name: 'No upcoming trains', eta: '--:--' };
-    }
-    
-    const nextTrain = incomingTrains[0];
-    const [hours, minutes] = nextTrain.time.split(':').map(Number);
-    const trainTime = new Date();
-    trainTime.setHours(hours, minutes, 0, 0);
-    
-    // Calculate ETA in minutes
-    const diffMs = trainTime.getTime() - now.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const remainingMins = diffMins % 60;
-    
-    const eta = diffHours > 0 
-      ? `${diffHours}h ${remainingMins}m`
-      : `${remainingMins}m`;
-    
-    return {
-      name: `${nextTrain.name} - ${nextTrain.relation}`,
-      eta: eta
-    };
-  }, [sortedSchedule]);
+  // Get the next incoming train for Masinis module sync
+  const incomingTrain = sortedSchedule
+    .map(t => ({ ...t, status: getTrainStatus(t.time) }))
+    .find(t => t.status === 'INCOMING') || sortedSchedule[0];
 
   const onlineCCTV = mapMarkers.filter(m => m.type === 'CCTV' && m.status !== 'OFFLINE').length;
   const totalCCTV = mapMarkers.filter(m => m.type === 'CCTV').length;
@@ -324,18 +499,71 @@ export default function DashboardPage() {
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-black text-[#2D2A70]">🖥️ JPL 305 - NGEMBE</h1>
-            {/* FEED TOGGLE SWITCH */}
-            <button
-              onClick={() => setIsStreamActive(!isStreamActive)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 ${isStreamActive
-                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600'
-                : 'bg-slate-400 text-white hover:bg-slate-500'
-                }`}
-            >
-              <span className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-white animate-pulse' : 'bg-slate-300'}`}></span>
-              {isStreamActive ? '● LIVE FEED ON' : '○ FEED OFF'}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* SECRET DEMO TRIGGER - Triple click to activate */}
+              <button
+                onClick={() => setDemoMode(true)}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-purple-100 text-purple-700 hover:bg-purple-200 transition"
+                title="Demo AEWS Mode"
+              >
+                🧪 DEMO
+              </button>
+              {/* FEED TOGGLE SWITCH */}
+              <button
+                onClick={() => setIsStreamActive(!isStreamActive)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm transition-all duration-300 ${isStreamActive
+                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 hover:bg-emerald-600'
+                  : 'bg-slate-400 text-white hover:bg-slate-500'
+                  }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${isStreamActive ? 'bg-white animate-pulse' : 'bg-slate-300'}`}></span>
+                {isStreamActive ? '● LIVE FEED ON' : '○ FEED OFF'}
+              </button>
+            </div>
           </div>
+
+          {/* AEWS STATUS BAR - 3 CONNECTION INDICATORS */}
+          <div className={`mt-3 p-3 rounded-xl flex items-center justify-between transition-all duration-500 ${interlockActive ? 'bg-red-900/20 border-2 border-red-500 animate-pulse' : 'bg-slate-100 border border-slate-200'}`}>
+            <div className="flex items-center gap-4">
+              {/* JPL Indicator */}
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${jplStatus === 'CONFIRMED' ? 'bg-red-500 text-white' :
+                jplStatus === 'SENDING' ? 'bg-amber-400 text-black animate-pulse' :
+                  'bg-emerald-100 text-emerald-700'
+                }`}>
+                📡 JPL: {jplStatus === 'CONFIRMED' ? '⚠️ ALERT' : jplStatus === 'SENDING' ? '⏳...' : 'AMAN'}
+              </div>
+
+              {/* Stasiun Indicator */}
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${stasiunStatus === 'CONFIRMED' ? 'bg-red-500 text-white' :
+                stasiunStatus === 'SENDING' ? 'bg-amber-400 text-black animate-pulse' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                🏢 STASIUN: {stasiunStatus === 'CONFIRMED' ? '⚠️ ALERT' : stasiunStatus === 'SENDING' ? '⏳...' : 'OK'}
+              </div>
+
+              {/* Masinis Indicator */}
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${masinisStatus === 'CONFIRMED' ? 'bg-red-500 text-white' :
+                masinisStatus === 'SENDING' ? 'bg-amber-400 text-black animate-pulse' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                🚆 KERETA: {masinisStatus === 'CONFIRMED' ? `⛔ ${emergencyTrainName}` : masinisStatus === 'SENDING' ? '⏳...' : 'OK'}
+              </div>
+            </div>
+
+            {/* Interlock Status */}
+            {interlockActive && (
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                <span className="text-red-600 font-black text-sm uppercase tracking-wider">
+                  {interlockPhase === 'DETECTING' && 'BAHAYA TERDETEKSI'}
+                  {interlockPhase === 'SENDING' && 'MENGIRIM SINYAL...'}
+                  {interlockPhase === 'CONFIRMED' && 'PROTOKOL AKTIF'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Original status badges */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className={`px-3 py-1 rounded-full text-[11px] font-bold ${wsConnected ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
               WS {wsConnected ? 'TERHUBUNG' : 'PUTUS'}
@@ -348,13 +576,23 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="bg-white rounded-xl border p-2 mb-4 flex gap-2 overflow-x-auto">
-          <button onClick={() => setActiveTab('ALL')} className={`px-3 py-2 rounded-lg font-bold text-sm ${activeTab === 'ALL' ? 'bg-[#2D2A70] text-white' : 'text-slate-600'}`}>👁️ ALL</button>
-          {cameraPoints.map((c) => <button key={c.id} onClick={() => setActiveTab(c.id)} className={`px-3 py-2 rounded-lg font-bold text-sm ${activeTab === c.id ? 'bg-[#DA5525] text-white' : 'text-slate-600'}`}>📍 {c.name}</button>)}
+          <button onClick={() => { setActiveTab('ALL'); setMonitorMode('GRID'); setFocusedCamera(null); }} className={`px-3 py-2 rounded-lg font-bold text-sm ${activeTab === 'ALL' ? 'bg-[#2D2A70] text-white' : 'text-slate-600'}`}>👁️ ALL</button>
+          {cameraPoints.map((c) => <button key={c.id} onClick={() => { setActiveTab(c.id); setMonitorMode('FOCUS'); setFocusedCamera(c.id); }} className={`px-3 py-2 rounded-lg font-bold text-sm ${activeTab === c.id ? 'bg-[#DA5525] text-white' : 'text-slate-600'}`}>📍 {c.name}</button>)}
         </div>
-        {activeTab === 'ALL' ? (
+
+        {/* GRID VIEW */}
+        {activeTab === 'ALL' && monitorMode === 'GRID' ? (
           <div className="grid grid-cols-2 gap-4">
             {cameraPoints.map((c) => (
-              <div key={c.id} onClick={() => setActiveTab(c.id)} className="bg-slate-900 rounded-xl overflow-hidden cursor-pointer relative aspect-video border border-white/10">
+              <div
+                key={c.id}
+                onClick={() => {
+                  setMonitorMode('FOCUS');
+                  setFocusedCamera(c.id);
+                  setActiveTab(c.id);
+                }}
+                className="bg-slate-900 rounded-xl overflow-hidden cursor-pointer relative aspect-video border border-white/10 hover:border-orange-500/50 hover:shadow-xl hover:shadow-orange-500/10 hover:scale-[1.02] transition-all duration-300 group"
+              >
                 <MediaPlayer media={c.media} danger={isDanger && (!dangerCameraId || dangerCameraId === c.id)} disabled={!isStreamActive} />
                 <div className="absolute top-0 left-0 right-0 p-3 bg-gradient-to-b from-black/70 flex justify-between">
                   <span className="text-white font-bold text-sm">{c.name}</span>
@@ -365,98 +603,115 @@ export default function DashboardPage() {
                     {c.media.label}
                   </div>
                 )}
+                {/* Hover Overlay - Click to Expand */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-[#2D2A70] font-bold text-sm shadow-lg">
+                    🔍 Klik untuk Zoom
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
-            {/* VIDEO WITH TACTICAL CONTROL DECK */}
-            <div className="col-span-2 bg-slate-950 rounded-xl overflow-hidden relative aspect-video border border-white/10">
-              <MediaPlayer media={selectedCamera?.media} danger={isDanger && (!dangerCameraId || dangerCameraId === selectedCamera?.id)} disabled={!isStreamActive} />
+          /* FOCUS VIEW */
+          <div className="space-y-4">
+            {/* Back to Grid Button */}
+            <button
+              onClick={() => { setMonitorMode('GRID'); setFocusedCamera(null); setActiveTab('ALL'); }}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold text-sm text-[#2D2A70] transition"
+            >
+              ← Kembali ke Grid
+            </button>
 
-              {/* AEON Watermark */}
-              <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
-                <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-md flex items-center justify-center text-white text-xs font-black">A</div>
-                <span className="text-white text-xs font-bold tracking-wider">AEON</span>
-              </div>
+            <div className="grid grid-cols-3 gap-4">
+              {/* VIDEO WITH TACTICAL CONTROL DECK */}
+              <div className="col-span-2 bg-slate-950 rounded-xl overflow-hidden relative aspect-video border border-white/10">
+                <MediaPlayer media={selectedCamera?.media} danger={isDanger && (!dangerCameraId || dangerCameraId === selectedCamera?.id)} disabled={!isStreamActive} />
 
-              {/* TACTICAL CONTROL DECK - Bottom Bar */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-4 py-3 flex items-center justify-between">
-                {/* LEFT: Camera Info */}
-                <div className="flex items-center gap-4 text-xs font-mono">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                    <span className="text-emerald-400 font-bold">📡 LIVE</span>
-                  </div>
-                  <div className="text-slate-400">🔍 ZOOM 1.0x</div>
-                  <div className="text-slate-500">|</div>
-                  <div className="text-slate-400">{selectedCamera?.name} • {selectedCamera?.confidence}%</div>
+                {/* AEON Watermark */}
+                <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg border border-white/10">
+                  <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-md flex items-center justify-center text-white text-xs font-black">A</div>
+                  <span className="text-white text-xs font-bold tracking-wider">AEON</span>
                 </div>
 
-                {/* CENTER: Action Buttons */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => showCustomToast('📸 Snapshot captured!')}
-                    className="group relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 active:scale-95"
-                    title="Ambil Bukti Foto"
-                  >
-                    <span className="text-lg">📸</span>
-                  </button>
+                {/* TACTICAL CONTROL DECK - Bottom Bar */}
+                <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-md border-t border-white/10 px-4 py-3 flex items-center justify-between">
+                  {/* LEFT: Camera Info */}
+                  <div className="flex items-center gap-4 text-xs font-mono">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
+                      <span className="text-emerald-400 font-bold">📡 LIVE</span>
+                    </div>
+                    <div className="text-slate-400">🔍 ZOOM 1.0x</div>
+                    <div className="text-slate-500">|</div>
+                    <div className="text-slate-400">{selectedCamera?.name} • {selectedCamera?.confidence}%</div>
+                  </div>
 
-                  <button
-                    onClick={() => showCustomToast('🔴 Recording started')}
-                    className="group relative w-10 h-10 rounded-full bg-white/10 hover:bg-red-600/20 border border-white/20 hover:border-red-500/50 flex items-center justify-center transition-all duration-300 active:scale-95"
-                    title="Start Recording"
-                  >
-                    <span className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
-                  </button>
+                  {/* CENTER: Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => showCustomToast('📸 Snapshot captured!')}
+                      className="group relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 active:scale-95"
+                      title="Ambil Bukti Foto"
+                    >
+                      <span className="text-lg">📸</span>
+                    </button>
 
+                    <button
+                      onClick={() => showCustomToast('🔴 Recording started')}
+                      className="group relative w-10 h-10 rounded-full bg-white/10 hover:bg-red-600/20 border border-white/20 hover:border-red-500/50 flex items-center justify-center transition-all duration-300 active:scale-95"
+                      title="Start Recording"
+                    >
+                      <span className="w-3 h-3 bg-red-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+                    </button>
+
+                    <button
+                      className="group relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 active:scale-95"
+                      title="Push-to-Talk"
+                    >
+                      <span className="text-lg">🎤</span>
+                    </button>
+                  </div>
+
+                  {/* RIGHT: Danger Zone - Emergency */}
                   <button
-                    className="group relative w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center transition-all duration-300 active:scale-95"
-                    title="Push-to-Talk"
+                    onClick={() => setShowEmergencyModal(true)}
+                    className="px-5 py-2 rounded-md bg-gradient-to-r from-red-700 to-red-600 border border-red-500/50 text-white text-xs font-black tracking-wider hover:shadow-[0_0_20px_rgba(220,38,38,0.8)] transition-all duration-300 active:scale-95 flex items-center gap-2"
                   >
-                    <span className="text-lg">🎤</span>
+                    <span className="animate-pulse">🚨</span>
+                    <span>TRIGGER ALARM</span>
                   </button>
                 </div>
-
-                {/* RIGHT: Danger Zone - Emergency */}
-                <button
-                  onClick={() => setShowEmergencyModal(true)}
-                  className="px-5 py-2 rounded-md bg-gradient-to-r from-red-700 to-red-600 border border-red-500/50 text-white text-xs font-black tracking-wider hover:shadow-[0_0_20px_rgba(220,38,38,0.8)] transition-all duration-300 active:scale-95 flex items-center gap-2"
-                >
-                  <span className="animate-pulse">🚨</span>
-                  <span>TRIGGER ALARM</span>
-                </button>
               </div>
-            </div>
 
-            {/* RIGHT PANEL */}
-            <div className="col-span-1 space-y-3">
-              <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                <h3 className="font-bold text-white text-sm mb-3">🚆 Next Train</h3>
-                <p className="text-slate-300 text-xs">{trainInfo.name}</p>
-                <p className="text-emerald-400 text-xs font-mono mt-1">ETA: {trainInfo.eta}</p>
-              </div>
-              <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                <h3 className="font-bold text-white text-sm mb-2">📊 Detection</h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Confidence</span>
-                    <span className={`${latest && latest.in_roi ? 'text-red-400' : 'text-emerald-400'} font-bold`}>
-                      {isLatestForSelected && latestConfidencePct ? `${latestConfidencePct}%` : `${selectedCamera?.confidence}%`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Violations</span>
-                    <span className="text-orange-400 font-bold">
-                      {isLatestForSelected ? `${(selectedCamera?.violations || 0) + 1}` : selectedCamera?.violations}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Status</span>
-                    <span className={`font-bold ${isLatestForSelected && latest?.in_roi ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {isLatestForSelected ? latestStatusLabel : selectedCamera?.status}
-                    </span>
+              {/* RIGHT PANEL */}
+              <div className="col-span-1 space-y-3">
+                <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-white/10">
+                  <h3 className="font-bold text-white text-sm mb-3">🚆 Next Train</h3>
+                  <p className="text-slate-300 text-xs">{incomingTrain.name}</p>
+                  <p className="text-emerald-400 text-xs font-mono mt-1">ETA: {incomingTrain.time}</p>
+                </div>
+                <div className="bg-slate-900/50 backdrop-blur-md rounded-xl p-4 border border-white/10">
+                  <h3 className="font-bold text-white text-sm mb-2">📊 Detection</h3>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Confidence</span>
+                      <span className={`${latest && latest.in_roi ? 'text-red-400' : 'text-emerald-400'} font-bold`}>
+                        {isLatestForSelected && latestConfidencePct ? `${latestConfidencePct}%` : `${selectedCamera?.confidence}%`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Violations</span>
+                      <span className="text-orange-400 font-bold">
+                        {isLatestForSelected ? `${(selectedCamera?.violations || 0) + 1}` : selectedCamera?.violations}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Status</span>
+                      <span className={`font-bold ${isLatestForSelected && latest?.in_roi ? 'text-red-400' : 'text-emerald-400'}`}>
+                        {isLatestForSelected ? latestStatusLabel : selectedCamera?.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -668,37 +923,89 @@ export default function DashboardPage() {
       {/* ARCHIVE */}
       {
         activeView === 'ARCHIVE' && (<>
-          <div className="mb-4"><h1 className="text-xl font-black text-[#2D2A70]">🗂️ ARSIP BUKTI</h1></div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {detections.length === 0 && <p className="text-slate-500 col-span-full">Belum ada bukti dari AI.</p>}
-            {detections.map((det, idx) => {
-              const vType = det.object_class === 'person' ? 'menerobos' : det.object_class === 'car' ? 'berhenti' : 'nekat';
-              const badge = violationBadge[vType as keyof typeof violationBadge] || violationBadge['nekat'];
+          <div className="mb-4">
+            <h1 className="text-xl font-black text-[#2D2A70]">🗂️ ARSIP BUKTI KEJADIAN</h1>
+            <p className="text-slate-500 text-sm">Riwayat deteksi dan insiden yang tercatat oleh sistem AI</p>
+          </div>
+
+          {/* Evidence Logs Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {EVIDENCE_LOGS.map((ev) => {
+              const badge = getStatusBadge(ev.status);
               return (
-                <div key={`${det.timestamp}-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden border">
+                <div
+                  key={ev.id}
+                  onClick={() => setSelectedEvidence({
+                    id: ev.id,
+                    time: ev.time,
+                    date: new Date().toLocaleDateString('id-ID'),
+                    location: ev.location,
+                    locationType: ev.location,
+                    violationType: ev.status === 'DANGER' ? 'menerobos' : ev.status === 'WARNING' ? 'berhenti' : 'nekat',
+                    thumbnail: ev.image,
+                    duration: '00:15',
+                    description: ev.description,
+                    speed: '-',
+                    platNomor: '-',
+                  } as EvidenceItem)}
+                  className="bg-white rounded-xl shadow-lg overflow-hidden border cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+                >
                   <div className="relative aspect-video bg-slate-900">
-                    {det.image_url ? (
-                      <Image src={det.image_url} alt="evidence" fill className="object-cover opacity-90" />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">No image</div>
-                    )}
+                    <Image src={ev.image} alt={ev.title} fill className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                     <div className="absolute top-2 left-2">
-                      <span className={`px-2 py-1 rounded text-xs font-bold ${badge.bg} ${badge.text}`}>{badge.label}</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold text-white ${badge.bg}`}>
+                        {badge.icon} {badge.text}
+                      </span>
                     </div>
-                    <div className="absolute bottom-2 left-2 right-2 flex justify-between text-[10px] text-white drop-shadow">
-                      <span>{det.camera_id || '-'}</span>
-                      <span>{new Date(det.timestamp).toLocaleTimeString('id-ID')}</span>
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <p className="text-white font-bold text-sm drop-shadow">{ev.title}</p>
+                      <p className="text-white/80 text-xs">{ev.time} • {ev.location}</p>
                     </div>
                   </div>
-                  <div className="p-3 space-y-1 text-xs text-slate-600">
-                    <div className="font-bold text-[#2D2A70] uppercase">{det.object_class}</div>
-                    <div>Conf: {(det.confidence * 100).toFixed(1)}%</div>
-                    <div>Durasi: {det.duration_seconds?.toFixed(1)}s</div>
+                  <div className="p-3">
+                    <p className="text-slate-600 text-xs line-clamp-2">{ev.description}</p>
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {/* AI Detections Section */}
+          {detections.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-bold text-[#2D2A70] mb-4">📡 Deteksi AI Real-time</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {detections.map((det, idx) => {
+                  const vType = det.object_class === 'person' ? 'menerobos' : det.object_class === 'car' ? 'berhenti' : 'nekat';
+                  const badge = violationBadge[vType as keyof typeof violationBadge] || violationBadge['nekat'];
+                  return (
+                    <div key={`${det.timestamp}-${idx}`} className="bg-white rounded-xl shadow-lg overflow-hidden border">
+                      <div className="relative aspect-video bg-slate-900">
+                        {det.image_url ? (
+                          <Image src={det.image_url} alt="evidence" fill className="object-cover opacity-90" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">No image</div>
+                        )}
+                        <div className="absolute top-2 left-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${badge.bg} ${badge.text}`}>{badge.label}</span>
+                        </div>
+                        <div className="absolute bottom-2 left-2 right-2 flex justify-between text-[10px] text-white drop-shadow">
+                          <span>{det.camera_id || '-'}</span>
+                          <span>{new Date(det.timestamp).toLocaleTimeString('id-ID')}</span>
+                        </div>
+                      </div>
+                      <div className="p-3 space-y-1 text-xs text-slate-600">
+                        <div className="font-bold text-[#2D2A70] uppercase">{det.object_class}</div>
+                        <div>Conf: {(det.confidence * 100).toFixed(1)}%</div>
+                        <div>Durasi: {det.duration_seconds?.toFixed(1)}s</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </>)
       }
 
@@ -717,10 +1024,57 @@ export default function DashboardPage() {
       {
         activeView === 'TRAIN_COMMS' && (
           <div className="space-y-4">
-            <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">🚆 KOMUNIKASI MASINIS</h1></div>
-            <div className="bg-slate-900 rounded-xl p-4 border border-slate-700 grid grid-cols-3 gap-4 items-center"><div><p className="text-emerald-400 font-mono text-sm">🟢 CONNECTED</p></div><div className="text-center"><p className="text-white font-black">KA 102 - ARGO WILIS</p></div><div className="text-right"><p className="text-emerald-400 font-mono text-xs">98%</p></div></div>
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 relative h-20"><div className="absolute top-1/2 left-0 right-0 h-2 bg-slate-600 rounded-full -translate-y-1/2"></div><motion.div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: `${trainPosition}%` }}><div className="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded mb-1 font-mono">{trainDistanceKm} KM</div><div className="text-2xl">🚆</div></motion.div></div>
-            <div className="grid grid-cols-3 gap-4"><button onClick={() => showCustomToast('📡 Reply: 24ms')} className="bg-blue-600 text-white p-6 rounded-xl text-center"><div className="text-3xl mb-2">📡</div><p className="font-black">PING</p></button><button onClick={() => showCustomToast('✅ AMAN dikirim')} className="bg-emerald-600 text-white p-6 rounded-xl text-center"><div className="text-3xl mb-2">✅</div><p className="font-black">AMAN</p></button><button onClick={() => setShowTrainStopModal(true)} className="bg-red-600 text-white p-6 rounded-xl text-center animate-pulse"><div className="text-3xl mb-2">⚠️</div><p className="font-black">DARURAT</p></button></div>
+            <div className="mb-2">
+              <h1 className="text-xl font-black text-[#2D2A70]">🚆 KOMUNIKASI MASINIS</h1>
+              <p className="text-slate-500 text-sm">Kereta yang akan melintas: {incomingTrain.name} • ETA {incomingTrain.time}</p>
+            </div>
+
+            {/* Train Info Card */}
+            <div className="bg-slate-900 rounded-xl p-4 border border-slate-700">
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <div>
+                  <p className="text-emerald-400 font-mono text-sm">🟢 CONNECTED</p>
+                  <p className="text-slate-500 text-xs mt-1">Signal: 98%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-white font-black text-lg">{incomingTrain.name}</p>
+                  <p className="text-slate-400 text-xs">{incomingTrain.relation}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-blue-400 font-mono text-lg font-bold">{incomingTrain.time}</p>
+                  <p className="text-slate-500 text-xs">Jadwal Tiba</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Train Position Tracker */}
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 relative h-24">
+              <div className="absolute top-1/2 left-4 right-4 h-2 bg-slate-600 rounded-full -translate-y-1/2"></div>
+              <div className="absolute top-1/2 left-4 -translate-y-1/2 w-3 h-3 bg-emerald-500 rounded-full"></div>
+              <div className="absolute top-1/2 right-4 -translate-y-1/2 w-3 h-3 bg-blue-500 rounded-full"></div>
+              <motion.div className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: `${trainPosition}%` }}>
+                <div className="bg-amber-500 text-black text-xs font-bold px-2 py-1 rounded mb-1 font-mono">{trainDistanceKm} KM</div>
+                <div className="text-2xl">🚆</div>
+              </motion.div>
+              <div className="absolute bottom-2 left-4 text-slate-500 text-xs">JPL 305</div>
+              <div className="absolute bottom-2 right-4 text-slate-500 text-xs">Stasiun</div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-3 gap-4">
+              <button onClick={() => showCustomToast(`📡 Ping ke ${incomingTrain.name}: 24ms`)} className="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-xl text-center transition">
+                <div className="text-3xl mb-2">📡</div>
+                <p className="font-black">PING</p>
+              </button>
+              <button onClick={() => showCustomToast(`✅ Status AMAN dikirim ke ${incomingTrain.name}`)} className="bg-emerald-600 hover:bg-emerald-700 text-white p-6 rounded-xl text-center transition">
+                <div className="text-3xl mb-2">✅</div>
+                <p className="font-black">AMAN</p>
+              </button>
+              <button onClick={() => setShowTrainStopModal(true)} className="bg-red-600 hover:bg-red-700 text-white p-6 rounded-xl text-center animate-pulse transition">
+                <div className="text-3xl mb-2">⚠️</div>
+                <p className="font-black">DARURAT</p>
+              </button>
+            </div>
           </div>
         )
       }
@@ -731,7 +1085,7 @@ export default function DashboardPage() {
           <div className="space-y-4">
             <div className="mb-2"><h1 className="text-xl font-black text-[#2D2A70]">📅 JADWAL KERETA</h1></div>
             <div className="flex items-center gap-4 bg-white rounded-xl p-3 border"><input type="text" placeholder="🔍 Cari..." value={scheduleSearch} onChange={(e) => setScheduleSearch(e.target.value)} className="flex-1 px-4 py-2 bg-slate-100 rounded-lg text-sm" /><div className="flex gap-2"><button onClick={() => setScheduleFilter('ALL')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'ALL' ? 'bg-[#2D2A70] text-white' : 'bg-slate-100'}`}>Semua</button><button onClick={() => setScheduleFilter('INCOMING')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'INCOMING' ? 'bg-blue-600 text-white' : 'bg-slate-100'}`}>Datang</button><button onClick={() => setScheduleFilter('LATE')} className={`px-4 py-2 rounded-lg font-bold text-sm ${scheduleFilter === 'LATE' ? 'bg-red-600 text-white' : 'bg-slate-100'}`}>Telat</button></div></div>
-            <div className="bg-white rounded-xl border overflow-hidden"><table className="w-full text-sm"><thead className="bg-[#2D2A70] text-white"><tr><th className="p-4 text-left">KA</th><th className="p-4 text-left">Tujuan</th><th className="p-4 text-left">Jadwal</th><th className="p-4 text-left">Status</th></tr></thead><tbody>{filteredSchedule.map((t, i) => <tr key={t.id} className={i % 2 === 0 ? '' : 'bg-slate-50'}><td className="p-4 font-bold text-[#2D2A70]">{t.noKA} - {t.nama}</td><td className="p-4">{t.tujuan}</td><td className="p-4 font-mono">{t.jadwal}</td><td className="p-4">{t.status === 'PASSED' ? <span className="px-2 py-1 rounded bg-slate-200 text-slate-600 text-xs">✓</span> : t.status === 'INCOMING' ? <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs animate-pulse">🔵</span> : <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs">🔴</span>}</td></tr>)}</tbody></table></div>
+            <div className="bg-white rounded-xl border overflow-hidden"><table className="w-full text-sm"><thead className="bg-[#2D2A70] text-white"><tr><th className="p-4 text-left">Nama KA</th><th className="p-4 text-left">Relasi</th><th className="p-4 text-left">Jadwal</th><th className="p-4 text-left">Status</th></tr></thead><tbody>{filteredSchedule.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">Tidak ada jadwal ditemukan</td></tr> : filteredSchedule.map((t, i) => <tr key={t.id} className={i % 2 === 0 ? '' : 'bg-slate-50'}><td className="p-4 font-bold text-[#2D2A70]">{t.name}</td><td className="p-4 text-slate-600">{t.relation}</td><td className="p-4 font-mono font-bold text-slate-800">{t.time}</td><td className="p-4">{t.status === 'PASSED' ? <span className="px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">✓ Sudah Lewat</span> : <span className="px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-bold animate-pulse">● Akan Datang</span>}</td></tr>)}</tbody></table></div>
           </div>
         )
       }
@@ -928,7 +1282,7 @@ const StreamPlayer = ({ src, danger = false }: { src: string; danger?: boolean }
     } else if (src.match(/cam\d+$/)) {
       latestUrl = src + '/latest';
     }
-    
+
     const updateFrame = () => {
       if (imgRef.current) {
         // Add timestamp to prevent caching
@@ -956,14 +1310,14 @@ const StreamPlayer = ({ src, danger = false }: { src: string; danger?: boolean }
         if (!ctx) return;
 
         ctx.drawImage(imgRef.current, 0, 0);
-        
+
         // Convert to blob and download
         canvasRef.current.toBlob((blob) => {
           if (!blob) return;
-          
+
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
           const filename = `snapshot_${timestamp}.jpg`;
-          
+
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
@@ -972,7 +1326,7 @@ const StreamPlayer = ({ src, danger = false }: { src: string; danger?: boolean }
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          
+
           console.log(`[AUTO-SAVE] Screenshot saved: ${filename}`);
         }, 'image/jpeg', 0.95);
       } catch (err) {
