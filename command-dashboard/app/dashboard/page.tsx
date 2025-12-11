@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -30,6 +30,7 @@ interface MapMarker { id: string; name: string; location: string; top: string; l
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 const STREAM_URL = process.env.NEXT_PUBLIC_STREAM_URL || `${API_BASE}/stream/cam1`;
 const MEDIA_BASE = process.env.NEXT_PUBLIC_MEDIA_URL || '/api/media';
+const EVIDENCE_BASE = process.env.NEXT_PUBLIC_EVIDENCE_URL || `${API_BASE}/evidence`;
 const DETECTION_API = `${API_BASE}/api/detections`;
 
 const cameraPoints: CameraPoint[] = [
@@ -38,7 +39,7 @@ const cameraPoints: CameraPoint[] = [
     name: 'TITIK A',
     location: 'Jalur Tikus Sawah',
     status: 'AMAN',
-    media: { kind: 'stream', src: STREAM_URL, label: 'WEBCAM LIVE' },
+    media: { kind: 'stream', src: `${API_BASE}/stream/cam1`, label: 'WEBCAM LIVE' },
     confidence: 98,
     violations: 28
   },
@@ -65,7 +66,7 @@ const cameraPoints: CameraPoint[] = [
     name: 'TITIK D',
     location: 'Pasar Kaget',
     status: 'AMAN',
-    media: { kind: 'file', src: `${MEDIA_BASE}?file=VID_20251207_143017243.mp4`, poster: '/images/feed-track.jpg', label: 'Dataset #3' },
+    media: { kind: 'file', src: `${MEDIA_BASE}?file=VID_20251207_142949636.mp4`, poster: '/images/feed-track.jpg', label: 'Dataset #3' },
     confidence: 92,
     violations: 15
   },
@@ -271,6 +272,38 @@ export default function DashboardPage() {
   const filteredSchedule = sortedSchedule
     .filter(t => t.name.toLowerCase().includes(scheduleSearch.toLowerCase()) || t.relation.toLowerCase().includes(scheduleSearch.toLowerCase()))
     .map(t => ({ ...t, status: getTrainStatus(t.time) }));
+
+  // Calculate next train info
+  const trainInfo = useMemo(() => {
+    const now = new Date();
+    const incomingTrains = sortedSchedule
+      .map(t => ({ ...t, status: getTrainStatus(t.time) }))
+      .filter(t => t.status === 'INCOMING');
+    
+    if (incomingTrains.length === 0) {
+      return { name: 'No upcoming trains', eta: '--:--' };
+    }
+    
+    const nextTrain = incomingTrains[0];
+    const [hours, minutes] = nextTrain.time.split(':').map(Number);
+    const trainTime = new Date();
+    trainTime.setHours(hours, minutes, 0, 0);
+    
+    // Calculate ETA in minutes
+    const diffMs = trainTime.getTime() - now.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const remainingMins = diffMins % 60;
+    
+    const eta = diffHours > 0 
+      ? `${diffHours}h ${remainingMins}m`
+      : `${remainingMins}m`;
+    
+    return {
+      name: `${nextTrain.name} - ${nextTrain.relation}`,
+      eta: eta
+    };
+  }, [sortedSchedule]);
 
   const onlineCCTV = mapMarkers.filter(m => m.type === 'CCTV' && m.status !== 'OFFLINE').length;
   const totalCCTV = mapMarkers.filter(m => m.type === 'CCTV').length;
@@ -857,26 +890,9 @@ const MediaPlayer = ({ media, autoPlay = true, muted = true, danger = false, dis
     return <div className="absolute inset-0 bg-slate-900 flex items-center justify-center text-slate-500 text-xs">Media tidak tersedia</div>;
   }
 
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    if (media.kind !== 'stream') return;
-    const interval = setInterval(() => setRefreshKey(Date.now()), 15000);
-    return () => clearInterval(interval);
-  }, [media.kind]);
-
   if (media.kind === 'stream') {
-    return (
-      <div className="absolute inset-0">
-        <img
-          key={refreshKey}
-          src={`${media.src}?t=${refreshKey}`}
-          alt={media.label || 'Live Stream'}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {danger && <DangerOverlay />}
-      </div>
-    );
+    // Use polling to fetch latest frame (browser compatible)
+    return <StreamPlayer src={media.src} danger={danger} />;
   }
 
   return (
@@ -891,6 +907,135 @@ const MediaPlayer = ({ media, autoPlay = true, muted = true, danger = false, dis
         controls={false}
         poster={media.poster}
       />
+      {danger && <DangerOverlay />}
+    </div>
+  );
+};
+
+const StreamPlayer = ({ src, danger = false }: { src: string; danger?: boolean }) => {
+  const imgRef = useRef<HTMLImageElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Convert stream URL to latest frame endpoint
+    // Handle all cameras (cam1, cam2, cam3, cam4)
+    let latestUrl = src;
+    if (src.includes('/stream/cam')) {
+      // Replace /stream/camX with /stream/camX/latest
+      latestUrl = src.replace(/\/stream\/(cam\d+)$/, '/stream/$1/latest');
+    } else if (src.match(/cam\d+$/)) {
+      latestUrl = src + '/latest';
+    }
+    
+    const updateFrame = () => {
+      if (imgRef.current) {
+        // Add timestamp to prevent caching
+        const urlWithTimestamp = `${latestUrl}?t=${Date.now()}`;
+        imgRef.current.src = urlWithTimestamp;
+      }
+    };
+
+    // Function to save screenshot
+    const saveScreenshot = () => {
+      if (!imgRef.current || !imgRef.current.complete || imgRef.current.naturalWidth === 0) {
+        return;
+      }
+
+      try {
+        // Create canvas to capture image
+        if (!canvasRef.current) {
+          const canvas = document.createElement('canvas');
+          canvas.width = imgRef.current.naturalWidth || imgRef.current.width;
+          canvas.height = imgRef.current.naturalHeight || imgRef.current.height;
+          canvasRef.current = canvas;
+        }
+
+        const ctx = canvasRef.current.getContext('2d');
+        if (!ctx) return;
+
+        ctx.drawImage(imgRef.current, 0, 0);
+        
+        // Convert to blob and download
+        canvasRef.current.toBlob((blob) => {
+          if (!blob) return;
+          
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+          const filename = `snapshot_${timestamp}.jpg`;
+          
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          console.log(`[AUTO-SAVE] Screenshot saved: ${filename}`);
+        }, 'image/jpeg', 0.95);
+      } catch (err) {
+        console.error('[AUTO-SAVE] Error saving screenshot:', err);
+      }
+    };
+
+    // Initial load
+    updateFrame();
+    setIsLoading(false);
+
+    // Poll every 50ms (~20 FPS) - balanced for performance with multiple streams
+    const frameInterval = setInterval(updateFrame, 50);
+
+    // Auto-save screenshot every 15 minutes (900000ms)
+    const screenshotInterval = setInterval(saveScreenshot, 15 * 60 * 1000);
+
+    return () => {
+      clearInterval(frameInterval);
+      clearInterval(screenshotInterval);
+    };
+  }, [src]);
+
+  if (error) {
+    return (
+      <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-slate-400">
+        <div className="text-4xl mb-3">📷</div>
+        <p className="text-sm font-bold mb-1">Stream Tidak Tersedia</p>
+        <p className="text-xs text-center px-4">Pastikan AI Engine berjalan dan mengirim frame ke backend</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0">
+      {isLoading && (
+        <div className="absolute inset-0 bg-slate-900 flex items-center justify-center text-slate-400">
+          <div className="text-4xl mb-3 animate-pulse">📷</div>
+        </div>
+      )}
+      <img
+        ref={imgRef}
+        alt="Live Stream"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ imageRendering: 'auto', display: isLoading ? 'none' : 'block' }}
+        onError={(e) => {
+          // Don't show error immediately, might be temporary
+          console.warn(`[StreamPlayer] Frame load error for ${src}`);
+          // Retry after delay
+          setTimeout(() => {
+            if (imgRef.current && !imgRef.current.complete) {
+              setError(true);
+              setIsLoading(false);
+            }
+          }, 3000);
+        }}
+        onLoad={() => {
+          setError(false);
+          setIsLoading(false);
+        }}
+      />
+      {/* Hidden canvas for screenshot capture */}
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
       {danger && <DangerOverlay />}
     </div>
   );

@@ -24,7 +24,8 @@ func NewMJPEGHub() *MJPEGHub {
 		subscribers:  make(map[chan []byte]struct{}),
 		subscribe:    make(chan chan []byte),
 		unsubscribe:  make(chan chan []byte),
-		broadcastReq: make(chan []byte, 8),
+		// Increased buffer to handle bursts (was 8, now 16)
+		broadcastReq: make(chan []byte, 16),
 	}
 }
 
@@ -102,28 +103,63 @@ func StreamMJPEG(hub *MJPEGHub) fiber.Handler {
 		c.Set("Pragma", "no-cache")
 		c.Set("Connection", "keep-alive")
 
-		subscriber := make(chan []byte, 4)
+		// Increased buffer size to reduce lag (was 4, now 8)
+		subscriber := make(chan []byte, 8)
 		hub.subscribe <- subscriber
 		defer func() {
 			hub.unsubscribe <- subscriber
 		}()
 
 		c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
-			for frame := range subscriber {
-				if len(frame) == 0 {
-					continue
+			for {
+				// Non-blocking read with frame dropping for slow clients
+				select {
+				case frame, ok := <-subscriber:
+					if !ok {
+						return // Channel closed
+					}
+					if len(frame) == 0 {
+						continue
+					}
+					// Drop old frames if channel has more (client too slow)
+					for {
+						select {
+						case newerFrame := <-subscriber:
+							if len(newerFrame) > 0 {
+								frame = newerFrame // Use latest frame
+							}
+						default:
+							goto writeFrame // No more frames, write current
+						}
+					}
+				writeFrame:
+					w.WriteString("--frame\r\n")
+					w.WriteString("Content-Type: image/jpeg\r\n")
+					w.WriteString("Content-Length: ")
+					w.WriteString(strconv.Itoa(len(frame)))
+					w.WriteString("\r\n\r\n")
+					w.Write(frame)
+					w.WriteString("\r\n")
+					w.Flush()
 				}
-				w.WriteString("--frame\r\n")
-				w.WriteString("Content-Type: image/jpeg\r\n")
-				w.WriteString("Content-Length: ")
-				w.WriteString(strconv.Itoa(len(frame)))
-				w.WriteString("\r\n\r\n")
-				w.Write(frame)
-				w.WriteString("\r\n")
-				w.Flush()
 			}
 		})
 		return nil
+	}
+}
+
+// LatestFrame returns the latest frame as a single JPEG image (for polling).
+func LatestFrame(hub *MJPEGHub) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		frame := hub.Latest()
+		if len(frame) == 0 {
+			return c.Status(fiber.StatusNoContent).SendString("No frame available")
+		}
+		c.Set("Content-Type", "image/jpeg")
+		c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Set("Pragma", "no-cache")
+		c.Set("Expires", "0")
+		return c.Send(frame)
 	}
 }
 

@@ -50,15 +50,43 @@ export default function AIPlayground() {
   // Helper: Initialize Webcam
   const startWebcam = async () => {
     try {
+      // Stop any existing stream first
+      if (videoRef.current?.srcObject) {
+        const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+        tracks.forEach(track => track.stop());
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 } 
+        video: { 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 },
+          facingMode: 'user'
+        } 
       });
+      
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        addLog("Webcam stream initialized successfully.");
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(err => {
+            addLog(`Error playing video: ${err}`);
+          });
+          addLog("Webcam stream initialized successfully.");
+        };
+        
+        videoRef.current.onerror = (err) => {
+          addLog(`Video element error: ${err}`);
+        };
+      } 
+    } catch (err: any) {
+      const errorMsg = err?.message || String(err);
+      addLog(`Error accessing webcam: ${errorMsg}`);
+      if (errorMsg.includes('permission')) {
+        addLog("Please allow camera access in your browser settings.");
+      } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('DevicesNotFoundError')) {
+        addLog("No camera device found. Please connect a camera.");
       }
-    } catch (err) {
-      addLog(`Error accessing webcam: ${err}`);
     }
   };
 
@@ -192,13 +220,24 @@ export default function AIPlayground() {
   useEffect(() => {
     setIsScanning(false);
     setVideoSrc(null);
-    if (videoRef.current) {
+    
+    // Clean up existing stream
+    if (videoRef.current?.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
       videoRef.current.srcObject = null;
+    }
+    
+    if (videoRef.current) {
       videoRef.current.src = "";
     }
 
     if (mode === 'webcam') {
-      startWebcam();
+      // Small delay to ensure cleanup is complete
+      const timer = setTimeout(() => {
+        startWebcam();
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [mode]);
 
@@ -266,9 +305,15 @@ export default function AIPlayground() {
             ref={videoRef}
             autoPlay
             muted
-            loop
             playsInline
             className="max-w-full max-h-full object-contain"
+            onLoadedMetadata={() => {
+              if (videoRef.current) {
+                videoRef.current.play().catch(err => {
+                  console.error('Error playing video:', err);
+                });
+              }
+            }}
           />
           
           {/* Canvas Overlay */}

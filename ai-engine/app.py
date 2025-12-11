@@ -24,7 +24,7 @@ STREAM_URL = os.getenv("STREAM_URL", "http://localhost:8080/api/internal/stream/
 CAMERA_ID = os.getenv("CAMERA_ID", "TITIK_A")
 ENABLE_STREAM = os.getenv("ENABLE_STREAM", "true").lower() != "false"
 ALERT_THRESHOLD_SECONDS = 3.0
-CONFIDENCE_THRESHOLD = 0.60
+CONFIDENCE_THRESHOLD = 0.40  # Lower threshold to detect more objects including trains (detected as truck/bus)
 # Default ByteTrack config bundled with ultralytics
 DEFAULT_TRACKER = "bytetrack.yaml"
 
@@ -63,14 +63,18 @@ class AIEngine:
         # Dictionary: {track_id: last_alert_time} to prevent spam
         self.alert_cooldowns = {}
         self.last_frame_push = 0.0
-        # Faster streaming by default (~20 FPS if source can keep up). Tune via env FRAME_PUSH_INTERVAL.
-        self.frame_push_interval = float(os.getenv("FRAME_PUSH_INTERVAL", "0.05"))
+        # Optimized for smoother streaming (~30 FPS default for low lag). Tune via env FRAME_PUSH_INTERVAL.
+        # Lower interval = more FPS = smoother but more bandwidth
+        self.frame_push_interval = float(os.getenv("FRAME_PUSH_INTERVAL", "0.033"))
         
         # Danger classes (COCO indices)
         # 0: person, 1: bicycle, 2: car, 3: motorcycle, 5: bus, 7: truck
+        # Note: YOLOv8 default doesn't have "train" class, but we detect all vehicles
         self.danger_classes = [0, 1, 2, 3, 5, 7]
         # Use model-provided names for accuracy
         self.class_names = self.model.names if hasattr(self.model, "names") else {}
+        print(f"[INIT] Model classes: {self.class_names}")
+        print(f"[INIT] Monitoring classes: {[self.class_names.get(i, f'class_{i}') for i in self.danger_classes]}")
 
     def _load_zone(self, zone_path: str):
         """Load polygon from json if available, otherwise fallback to default constant."""
@@ -137,7 +141,7 @@ class AIEngine:
             "object_id": int(obj_id),
             "duration_seconds": float(duration),
             "timestamp": datetime.utcnow().isoformat() + "Z",
-            "camera_id": CAMERA_ID,
+            "camera_id": os.getenv("CAMERA_ID", CAMERA_ID),
         }
         
         # Save evidence regardless of network status
@@ -160,60 +164,147 @@ class AIEngine:
             return
         self.last_frame_push = now
         try:
-            # Lower quality for lighter bandwidth (default 75). Override via JPEG_QUALITY env.
-            jpeg_quality = int(os.getenv("JPEG_QUALITY", "75"))
+            # Optimized quality for smoother streaming (default 70 for better quality). Override via JPEG_QUALITY env.
+            # Balance between quality and bandwidth
+            jpeg_quality = int(os.getenv("JPEG_QUALITY", "70"))
             ok, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             if not ok:
+                print(f"[STREAM] Failed to encode frame for {STREAM_URL}")
                 return
-            # short timeout to avoid blocking when backend down
-            requests.post(
+            # Increased timeout to avoid blocking when backend down
+            response = requests.post(
                 STREAM_URL,
                 data=buffer.tobytes(),
                 headers={"Content-Type": "image/jpeg"},
-                timeout=0.3,
+                timeout=1.0,  # Increased from 0.5 to 1.0
             )
+            if response.status_code != 202:
+                print(f"[STREAM] Warning: Backend returned {response.status_code} for {STREAM_URL}")
+            # Log success occasionally for debugging
+            elif int(time.time()) % 10 == 0:  # Log once every 10 seconds
+                print(f"[STREAM] ✓ Frame sent to {STREAM_URL} ({len(buffer)} bytes)")
+        except requests.exceptions.RequestException as e:
+            # Log network errors occasionally
+            if int(time.time()) % 5 == 0:  # Log once every 5 seconds
+                print(f"[STREAM] Network error: {e}")
         except Exception as e:
-            # log once in a while could be added; keep quiet to avoid spam
-            return
+            # Log other errors occasionally
+            if int(time.time()) % 5 == 0:  # Log once every 5 seconds
+                print(f"[STREAM] Error: {e}")
 
     def run(self):
         print(f"[RUN] Starting AI Engine on source: {self.source}")
+        print(f"[INFO] Stream URL: {STREAM_URL}")
+        print(f"[INFO] Camera ID: {os.getenv('CAMERA_ID', CAMERA_ID)}")
         print(f"[INFO] Alert Threshold: {ALERT_THRESHOLD_SECONDS} seconds")
+        print(f"[INFO] Confidence Threshold: {CONFIDENCE_THRESHOLD}")
         print(f"[INFO] Tracker: {self.tracker_config or 'default'}")
         print(f"[INFO] Zone file: {self.zone_path}")
         print(f"[INFO] Evidence dir: {self.evidence_dir}")
+        print(f"[INFO] Enable stream: {self.enable_stream}")
 
-        # Open video source (handle int for webcam)
-        src = int(self.source) if self.source.isdigit() else self.source
-        cap = cv2.VideoCapture(src)
+        # Handle image files - convert to video loop
+        is_image = False
+        img = None
+        src = None
+        cap = None
         
-        if not cap.isOpened():
-            print(f"[ERROR] Could not open video source: {src}")
-            return
+        if self.source.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp')):
+            print(f"[INFO] Detected image file, converting to video loop")
+            # Convert to absolute path
+            if not os.path.isabs(self.source):
+                img_path = os.path.abspath(self.source)
+            else:
+                img_path = self.source
+            print(f"[INFO] Loading image: {img_path}")
+            if not os.path.exists(img_path):
+                print(f"[ERROR] Image file not found: {img_path}")
+                print(f"[ERROR] Current working directory: {os.getcwd()}")
+                return
+            img = cv2.imread(img_path)
+            if img is None:
+                print(f"[ERROR] Could not load image: {img_path}")
+                return
+            print(f"[INFO] Image loaded: {img.shape[1]}x{img.shape[0]}")
+            is_image = True
+        else:
+            # Open video source (handle int for webcam)
+            if self.source.isdigit():
+                src = int(self.source)
+                print(f"[INFO] Opening webcam: {src}")
+            else:
+                # Convert to absolute path for video files
+                if not os.path.isabs(self.source):
+                    src = os.path.abspath(self.source)
+                else:
+                    src = self.source
+                print(f"[INFO] Opening video file: {src}")
+                if not os.path.exists(src):
+                    print(f"[ERROR] Video file not found: {src}")
+                    print(f"[ERROR] Current working directory: {os.getcwd()}")
+                    return
+            
+            cap = cv2.VideoCapture(src)
+            
+            if not cap.isOpened():
+                print(f"[ERROR] Could not open video source: {src}")
+                if isinstance(src, str):
+                    print(f"[ERROR] File exists: {os.path.exists(src)}")
+                return
+            
+            # Get video properties for logging
+            if isinstance(src, str):
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                print(f"[INFO] Video properties: {width}x{height}, {fps} FPS, {frame_count} frames")
 
         # Loop through frames
+        frame_count = 0
+        print(f"[INFO] Starting frame processing loop...")
         while True:
-            ret, frame = cap.read()
-            if not ret:
-                if isinstance(src, str): # Loop video file
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                    continue
-                else:
-                    break
+            if is_image:
+                frame = img.copy()
+                time.sleep(0.033)  # ~30 FPS for image loop
+            else:
+                ret, frame = cap.read()
+                if not ret:
+                    if isinstance(src, str): # Loop video file
+                        print(f"[INFO] Video ended, looping from start...")
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        continue
+                    else:
+                        print(f"[ERROR] Cannot read frame from webcam")
+                        break
+            
+            frame_count += 1
+            if frame_count % 100 == 0:  # Log every 100 frames
+                print(f"[INFO] Processed {frame_count} frames")
 
             # 1. Run YOLO Tracking
             # persist=True is crucial for ID tracking across frames
+            # Lower confidence for static images/videos to catch more objects
+            detection_conf = float(os.getenv("DETECTION_CONFIDENCE", str(CONFIDENCE_THRESHOLD)))
             results = self.model.track(
                 frame,
                 persist=True,
                 verbose=False,
-                conf=CONFIDENCE_THRESHOLD,
+                conf=detection_conf,
                 classes=self.danger_classes,
                 tracker=self.tracker_config,
             )
             
             # Current time for this frame
             frame_time = time.time()
+            
+            # Log detections occasionally for debugging
+            if int(frame_time) % 10 == 0:  # Log every 10 seconds
+                if results[0].boxes.id is not None:
+                    detections = len(results[0].boxes.id)
+                    print(f"[DETECT] Found {detections} tracked objects")
+                else:
+                    print(f"[DETECT] No objects detected (confidence threshold: {detection_conf})")
             
             # Reset zone status for visualization
             zone_color = (0, 255, 0) # Green (Safe)

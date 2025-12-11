@@ -32,8 +32,16 @@ func main() {
 	hub := realtime.NewHub()
 	go hub.Run()
 	history := storage.NewHistoryStore()
-	mjpeg := stream.NewMJPEGHub()
-	go mjpeg.Run()
+	
+	// Initialize multiple MJPEG hubs for 4 cameras
+	mjpeg1 := stream.NewMJPEGHub()
+	go mjpeg1.Run()
+	mjpeg2 := stream.NewMJPEGHub()
+	go mjpeg2.Run()
+	mjpeg3 := stream.NewMJPEGHub()
+	go mjpeg3.Run()
+	mjpeg4 := stream.NewMJPEGHub()
+	go mjpeg4.Run()
 
 	// Initialize SQLite database (optional, falls back to memory)
 	db, err := NewDatabase(os.Getenv("DB_DSN"))
@@ -69,7 +77,10 @@ func main() {
 		}
 		return db.InsertDetection(context.Background(), p)
 	}))
-	app.Post("/api/internal/stream/cam1", stream.IngestFrame(mjpeg))
+	app.Post("/api/internal/stream/cam1", stream.IngestFrame(mjpeg1))
+	app.Post("/api/internal/stream/cam2", stream.IngestFrame(mjpeg2))
+	app.Post("/api/internal/stream/cam3", stream.IngestFrame(mjpeg3))
+	app.Post("/api/internal/stream/cam4", stream.IngestFrame(mjpeg4))
 	app.Get("/api/history", api.HandleHistory(history, func(limit int) ([]models.DetectionPayload, error) {
 		if db == nil {
 			return nil, nil
@@ -107,8 +118,16 @@ func main() {
 	})
 	app.Get("/ws", websocket.New(realtime.WSHandler(hub)))
 
-	// MJPEG stream endpoint
-	app.Get("/stream/cam1", stream.StreamMJPEG(mjpeg))
+	// MJPEG stream endpoints (legacy multipart/x-mixed-replace)
+	app.Get("/stream/cam1", stream.StreamMJPEG(mjpeg1))
+	app.Get("/stream/cam2", stream.StreamMJPEG(mjpeg2))
+	app.Get("/stream/cam3", stream.StreamMJPEG(mjpeg3))
+	app.Get("/stream/cam4", stream.StreamMJPEG(mjpeg4))
+	// Latest frame endpoints (for polling - browser compatible)
+	app.Get("/stream/cam1/latest", stream.LatestFrame(mjpeg1))
+	app.Get("/stream/cam2/latest", stream.LatestFrame(mjpeg2))
+	app.Get("/stream/cam3/latest", stream.LatestFrame(mjpeg3))
+	app.Get("/stream/cam4/latest", stream.LatestFrame(mjpeg4))
 
 	// Protected endpoints (JWT required)
 	protected := app.Group("/api")
